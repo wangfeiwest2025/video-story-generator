@@ -1,0 +1,71 @@
+{
+  "title": "星辰战斗与归途",
+  "total_scenes": 8,
+  "total_duration_seconds": 91.49,
+  "scenes": [
+    {
+      "id": 1,
+      "visual_prompt": "Epic space battle beginning, countless battleships crossing the dark universe like meteors, blue engine lights illuminating endless star ocean, cinematic space opera style, dramatic lighting, 4K quality",
+      "audio_description": "dramatic orchestral music, deep space ambience, engine roar",
+      "duration_seconds": 12.19,
+      "length": 294,
+      "seed": 124456789
+    },
+    {
+      "id": 2,
+      "visual_prompt": "Commander Ayla standing on the flagship bridge, holographic star map floating in front of her, intense gaze watching enemy movements, futuristic command center with blue holographic displays, dramatic lighting, sci-fi military aesthetic",
+      "audio_description": "tension building music, holographic hum, footsteps on metal floor",
+      "duration_seconds": 10.66,
+      "length": 260,
+      "seed": 125456789
+    },
+    {
+      "id": 3,
+      "visual_prompt": "Intense space combat, energy beams weaving deadly light web in starry sky, explosions like blooming flowers of death, massive fleet battle, fighter ships dogfighting, cinematic slow motion, dramatic fire and debris",
+      "audio_description": "explosions, laser sounds, battle chaos, dramatic action music",
+      "duration_seconds": 12.65,
+      "length": 311,
+      "seed": 126456789
+    },
+    {
+      "id": 4,
+      "visual_prompt": "Commander Ayla piloting her fighter jet diving into enemy formation, dodging through intense firepower, heroic pilot in cockpit, dynamic camera movement, space dogfight action, laser trails, cinematic aerial combat",
+      "audio_description": "intense engine roar, laser shots, wind in cockpit, heroic action music",
+      "duration_seconds": 11.52,
+      "length": 277,
+      "seed": 127456789
+    },
+    {
+      "id": 5,
+      "visual_prompt": "Critical moment, discovering enemy flagship weakness, precise quantum torpedo launching, piercing through enemy shields, imperial massive battleship crumbling in flames and explosions, dramatic slow motion, triumphant moment",
+      "audio_description": "missile launch sound, massive explosion, debris crashing, triumphant music",
+      "duration_seconds": 10.78,
+      "length": 260,
+      "seed": 128456789
+    },
+    {
+      "id": 6,
+      "visual_prompt": "Battle aftermath, exhausted Commander Ayla looking at the devastated battlefield, debris floating in space, melancholic expression, distant stars, emotional moment, soft lighting, contemplative atmosphere",
+      "audio_description": "melancholic music, silence with distant explosion echoes, breathing",
+      "duration_seconds": 10.34,
+      "length": 260,
+      "seed": 129456789
+    },
+    {
+      "id": 7,
+      "visual_prompt": "Long journey home, battleship traveling through colorful nebula, passing distant galaxies, Commander Ayla gazing at stars through window, thinking of family, peaceful space travel, beautiful cosmic scenery, warm lighting",
+      "audio_description": "peaceful ambient music, soft space sounds, gentle engine hum",
+      "duration_seconds": 10.37,
+      "length": 260,
+      "seed": 130456789
+    },
+    {
+      "id": 8,
+      "visual_prompt": "Mother planet's blue glow appearing in view, beautiful Earth-like planet from space, Commander Ayla smiling warmly, hope and peace, final approach, sunrise over planet horizon, emotional conclusion, cinematic epic ending",
+      "audio_description": "emotional uplifting music, planetary ambience, soft wind, peaceful conclusion",
+      "duration_seconds": 12.98,
+      "length": 328,
+      "seed": 131456789
+    }
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "title": "星辰战斗与归途",
+  "duration": "2分钟",
+  "style": "科幻动画，电影级光影，太空歌剧风格",
+  "resolution": "1344x768",
+  "scenes": [
+    {
+      "id": 1,
+      "time": "0:00-0:15",
+      "narration": "在银河边缘的深处，一场史诗般的星际战役即将拉开帷幕。无数战舰如流星般划过黑暗的宇宙，引擎的蓝光照亮了无尽的星海。",
+      "visual_prompt": "Epic space battle beginning, countless battleships crossing the dark universe like meteors, blue engine lights illuminating endless star ocean, cinematic space opera style, dramatic lighting, 4K quality",
+      "audio": "dramatic orchestral music, deep space ambience, engine roar"
+    },
+    {
+      "id": 2,
+      "time": "0:15-0:30",
+      "narration": "指挥官艾拉站在旗舰舰桥上，她的目光穿透全息星图，注视着敌军的动向。星际联邦的命运，悬于一线。",
+      "visual_prompt": "Commander Ayla standing on the flagship bridge, holographic star map floating in front of her, intense gaze watching enemy movements, futuristic command center with blue holographic displays, dramatic lighting, sci-fi military aesthetic",
+      "audio": "tension building music, holographic hum, footsteps on metal floor"
+    },
+    {
+      "id": 3,
+      "time": "0:30-0:45",
+      "narration": "战火瞬间爆发。能量束在星空中交织成致命的光网，爆炸的火球如同盛开的死亡之花。联邦舰队与帝国军展开了殊死搏斗。",
+      "visual_prompt": "Intense space combat, energy beams weaving deadly light web in starry sky, explosions like blooming flowers of death, massive fleet battle, fighter ships dogfighting, cinematic slow motion, dramatic fire and debris",
+      "audio": "explosions, laser sounds, battle chaos, dramatic action music"
+    },
+    {
+      "id": 4,
+      "time": "0:45-1:00",
+      "narration": "艾拉驾驶她的战机冲入敌阵，在枪林弹雨中穿梭。她的每一个机动都是对死亡的蔑视，每一次射击都书写着英雄的传说。",
+      "visual_prompt": "Commander Ayla piloting her fighter jet diving into enemy formation, dodging through intense firepower, heroic pilot in cockpit, dynamic camera movement, space dogfight action, laser trails, cinematic aerial combat",
+      "audio": "intense engine roar, laser shots, wind in cockpit, heroic action music"
+    },
+    {
+      "id": 5,
+      "time": "1:00-1:15",
+      "narration": "关键时刻，她发现了敌军旗舰的弱点。一枚精准的量子鱼雷，击穿了敌人的护盾。帝国的巨舰在烈焰中崩溃。",
+      "visual_prompt": "Critical moment, discovering enemy flagship weakness, precise quantum torpedo launching, piercing through enemy shields, imperial massive battleship crumbling in flames and explosions, dramatic slow motion, triumphant moment",
+      "audio": "missile launch sound, massive explosion, debris crashing, triumphant music"
+    },
+    {
+      "id": 6,
+      "time": "1:15-1:30",
+      "narration": "战斗结束了，但胜利的喜悦中带着深深的疲惫。艾拉望着满目疮痍的战场，心中涌起对家乡的无尽思念。",
+      "visual_prompt": "Battle aftermath, exhausted Commander Ayla looking at the devastated battlefield, debris floating in space, melancholic expression, distant stars, emotional moment, soft lighting, contemplative atmosphere",
+      "audio": "melancholic music, silence with distant explosion echoes, breathing"
+    },
+    {
+      "id": 7,
+      "time": "1:30-1:45",
+      "narration": "归途漫长而宁静。战舰穿越星云，途经遥远的星系。艾拉看着窗外的星辰，想起了等待她归来的家人。",
+      "visual_prompt": "Long journey home, battleship traveling through colorful nebula, passing distant galaxies, Commander Ayla gazing at stars through window, thinking of family, peaceful space travel, beautiful cosmic scenery, warm lighting",
+      "audio": "peaceful ambient music, soft space sounds, gentle engine hum"
+    },
+    {
+      "id": 8,
+      "time": "1:45-2:00",
+      "narration": "终于，母星的蓝色光晕出现在视野中。艾拉微微一笑，她知道，无论星际多遥远，家永远在等待。这是她的归途，也是新的开始。",
+      "visual_prompt": "Mother planet's blue glow appearing in view, beautiful Earth-like planet from space, Commander Ayla smiling warmly, hope and peace, final approach, sunrise over planet horizon, emotional conclusion, cinematic epic ending",
+      "audio": "emotional uplifting music, planetary ambience, soft wind, peaceful conclusion"
+    }
+  ]
+}

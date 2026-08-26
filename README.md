@@ -53,14 +53,22 @@ python scripts/auto_generate.py my_story.json --output output/
 
 查看 `examples/` 目录：
 
-1. **科幻动画** - `scifi_story.json`
+1. **科幻动画《星辰战斗与归途》** - `scifi_battle_journey/` ⭐
+   - 时长: 1.5分钟
+   - 场景: 8个 (4个已完成)
+   - 风格: 太空歌剧
+   - **状态**: 实际生成项目，包含脚本、音频和进度文档
+   - 📁 查看: `examples/scifi_battle_journey/`
+
+2. **科幻动画脚本** - `scifi_story.json`
    - 时长: 1.5分钟
    - 场景: 8个
    - 风格: 太空歌剧
+   - 可直接使用的脚本模板
 
-2. **自然纪录片** - `nature_documentary.json`
+3. **自然纪录片** - `nature_documentary.json`
    - 时长: 2分钟
-   - 场景: 10个
+   - 场景: 4个
    - 风格: 水下摄影
 
 ## 🛠️ 配置要求

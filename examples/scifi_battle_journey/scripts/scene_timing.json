@@ -1,0 +1,56 @@
+{
+  "total_duration_seconds": 91.49,
+  "total_duration_minutes": 1.52,
+  "total_frames": 2195,
+  "fps": 24,
+  "scenes": [
+    {
+      "scene_id": 1,
+      "audio_file": "/workspace/scifi_audio/narration_01.mp3",
+      "duration_seconds": 12.19,
+      "duration_frames": 292
+    },
+    {
+      "scene_id": 2,
+      "audio_file": "/workspace/scifi_audio/narration_02.mp3",
+      "duration_seconds": 10.66,
+      "duration_frames": 255
+    },
+    {
+      "scene_id": 3,
+      "audio_file": "/workspace/scifi_audio/narration_03.mp3",
+      "duration_seconds": 12.65,
+      "duration_frames": 303
+    },
+    {
+      "scene_id": 4,
+      "audio_file": "/workspace/scifi_audio/narration_04.mp3",
+      "duration_seconds": 11.52,
+      "duration_frames": 276
+    },
+    {
+      "scene_id": 5,
+      "audio_file": "/workspace/scifi_audio/narration_05.mp3",
+      "duration_seconds": 10.78,
+      "duration_frames": 258
+    },
+    {
+      "scene_id": 6,
+      "audio_file": "/workspace/scifi_audio/narration_06.mp3",
+      "duration_seconds": 10.34,
+      "duration_frames": 248
+    },
+    {
+      "scene_id": 7,
+      "audio_file": "/workspace/scifi_audio/narration_07.mp3",
+      "duration_seconds": 10.37,
+      "duration_frames": 248
+    },
+    {
+      "scene_id": 8,
+      "audio_file": "/workspace/scifi_audio/narration_08.mp3",
+      "duration_seconds": 12.98,
+      "duration_frames": 311
+    }
+  ]
+}
