@@ -18,8 +18,9 @@ import shutil
 class VideoStoryGenerator:
     """AI短视频生成器"""
 
-    def __init__(self, script_file, output_dir="output"):
-        self.script_file = Path(script_file)
+    def __init__(self, script_file, output_dir="output", comfyui_url=None, voice=None,
+                 width=1344, height=768, steps=20, narration_volume=1.2, ambient_volume=0.5):
+        self.script_file = Path(script_file) if script_file else None
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(exist_ok=True)
 
@@ -31,15 +32,29 @@ class VideoStoryGenerator:
         for d in [self.audio_dir, self.video_dir, self.final_dir]:
             d.mkdir(exist_ok=True)
 
-        # 加载脚本
-        with open(self.script_file, 'r', encoding='utf-8') as f:
-            self.script = json.load(f)
+        # 加载脚本（如果提供了文件）
+        if self.script_file and self.script_file.exists():
+            with open(self.script_file, 'r', encoding='utf-8') as f:
+                self.script = json.load(f)
+        else:
+            self.script = None
 
-        self.scenes = self.script['scenes']
-        self.voice = self.script.get('voice', 'zh-CN-XiaoxiaoNeural')
+        # 参数设置
+        self.scenes = self.script['scenes'] if self.script else []
+        self.voice = voice or (self.script.get('voice', 'zh-CN-XiaoxiaoNeural') if self.script else 'zh-CN-XiaoxiaoNeural')
 
-        # ComfyUI API
-        self.comfyui_url = "http://127.0.0.1:8188"
+        # 视频参数
+        self.width = width
+        self.height = height
+        self.steps = steps
+
+        # 音频参数
+        self.narration_volume = narration_volume
+        self.ambient_volume = ambient_volume
+
+        # ComfyUI API - 支持外部链接
+        self.comfyui_url = comfyui_url or "http://127.0.0.1:8188"
+        print(f"🔌 ComfyUI地址: {self.comfyui_url}")
 
     async def generate_narration_audio(self):
         """阶段1: 生成解说词音频"""
@@ -447,9 +462,36 @@ def main():
     parser.add_argument("script", help="脚本JSON文件路径")
     parser.add_argument("--output", "-o", default="output", help="输出目录")
 
+    # ComfyUI设置
+    parser.add_argument("--comfyui-url", default=None,
+                        help="ComfyUI服务器地址（默认: http://127.0.0.1:8188）")
+
+    # 视频参数
+    parser.add_argument("--width", type=int, default=1344, help="视频宽度")
+    parser.add_argument("--height", type=int, default=768, help="视频高度")
+    parser.add_argument("--steps", type=int, default=20, help="采样步数")
+
+    # 音频参数
+    parser.add_argument("--voice", default="zh-CN-XiaoxiaoNeural",
+                        help="TTS语音 (zh-CN-XiaoxiaoNeural/zh-CN-YunxiNeural/zh-CN-YunjianNeural)")
+    parser.add_argument("--narration-volume", type=float, default=1.2,
+                        help="解说词音量倍数 (默认: 1.2)")
+    parser.add_argument("--ambient-volume", type=float, default=0.5,
+                        help="环境音音量倍数 (默认: 0.5)")
+
     args = parser.parse_args()
 
-    generator = VideoStoryGenerator(args.script, args.output)
+    generator = VideoStoryGenerator(
+        script_file=args.script,
+        output_dir=args.output,
+        comfyui_url=args.comfyui_url,
+        voice=args.voice,
+        width=args.width,
+        height=args.height,
+        steps=args.steps,
+        narration_volume=args.narration_volume,
+        ambient_volume=args.ambient_volume
+    )
     asyncio.run(generator.run_full_pipeline())
 
 

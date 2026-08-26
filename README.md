@@ -26,9 +26,16 @@ bash start.sh
 **Web界面特性**：
 - 📝 在线脚本编辑
 - 🎥 参数可视化调整
+- 🔌 支持外部ComfyUI服务器
 - 📊 实时进度监控
 - 🎥 在线预览下载
 - 🎯 非技术用户友好
+
+**支持外部ComfyUI**：
+- 本地: `http://127.0.0.1:8188`（默认）
+- 远程: `https://your-server.com`
+- CNB: `https://xxx-8188.cnb.run/`
+- 详见: [外部ComfyUI配置指南](docs/EXTERNAL_COMFYUI.md)
 
 ### 方式2: 命令行
 

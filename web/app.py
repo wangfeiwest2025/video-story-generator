@@ -78,11 +78,46 @@ if 'progress' not in st.session_state:
     st.session_state.progress = {}
 if 'output_dir' not in st.session_state:
     st.session_state.output_dir = None
+if 'comfyui_url' not in st.session_state:
+    st.session_state.comfyui_url = "http://127.0.0.1:8188"
 
 # 侧边栏
 with st.sidebar:
     st.image("https://img.shields.io/badge/version-1.0.0-blue", width=100)
     st.markdown("### 🎬 AI短视频生成器")
+    st.markdown("---")
+
+    # ComfyUI设置
+    st.markdown("### 🔌 ComfyUI设置")
+    comfyui_mode = st.radio(
+        "ComfyUI模式",
+        ["本地", "远程URL"],
+        index=0
+    )
+
+    if comfyui_mode == "本地":
+        comfyui_url = "http://127.0.0.1:8188"
+        st.info("🔗 本地地址: http://127.0.0.1:8188")
+    else:
+        comfyui_url = st.text_input(
+            "ComfyUI URL",
+            value="https://yvkxlmr70c-8188.cnb.run/",
+            help="输入远程ComfyUI服务器地址，例如：https://your-server.com"
+        )
+        st.session_state.comfyui_url = comfyui_url
+
+    # 测试连接
+    if st.button("🔌 测试连接"):
+        try:
+            import requests
+            response = requests.get(f"{comfyui_url}/system_stats", timeout=5)
+            if response.status_code == 200:
+                st.success("✅ ComfyUI连接成功！")
+            else:
+                st.error(f"❌ 连接失败: HTTP {response.status_code}")
+        except Exception as e:
+            st.error(f"❌ 连接失败: {str(e)}")
+
     st.markdown("---")
 
     # TTS语音选择
@@ -382,8 +417,9 @@ if st.session_state.status == 'running' and st.session_state.script:
             # 初始化生成器
             output_dir = f"output/streamlit_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
             generator = VideoStoryGenerator(
-                script_path=None,  # 直接传脚本
+                script_file=None,  # 直接传脚本
                 output_dir=output_dir,
+                comfyui_url=st.session_state.comfyui_url,
                 voice=voice_id,
                 width=width,
                 height=height,
