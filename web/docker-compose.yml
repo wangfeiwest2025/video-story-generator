@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  # Streamlit Web界面
+  web:
+    build: .
+    ports:
+      - "8501:8501"
+    environment:
+      - COMFYUI_URL=http://comfyui:8188
+    volumes:
+      - ./output:/app/output
+      - ../ComfyUI/output:/app/comfyui_output:ro
+    depends_on:
+      - comfyui
+    networks:
+      - video-net
+
+  # ComfyUI后端
+  comfyui:
+    image: comfyui/comfyui:latest
+    ports:
+      - "8188:8188"
+    environment:
+      - CLI_ARGS=--listen 0.0.0.0
+    volumes:
+      - ../ComfyUI/models:/app/models
+      - ../ComfyUI/output:/app/output
+      - ../ComfyUI/custom_nodes:/app/custom_nodes
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    networks:
+      - video-net
+
+networks:
+  video-net:
+    driver: bridge
+
+volumes:
+  comfyui_models:
+  comfyui_output:

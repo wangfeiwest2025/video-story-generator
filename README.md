@@ -12,6 +12,26 @@
 
 ## 🚀 快速开始
 
+### 方式1: Web界面（推荐） ⭐
+
+最简单的使用方式！
+
+```bash
+cd web/
+bash start.sh
+```
+
+浏览器自动打开 `http://localhost:8501`
+
+**Web界面特性**：
+- 📝 在线脚本编辑
+- 🎥 参数可视化调整
+- 📊 实时进度监控
+- 🎥 在线预览下载
+- 🎯 非技术用户友好
+
+### 方式2: 命令行
+
 ### 1. 准备脚本
 
 创建分镜脚本 `my_story.json`:
@@ -36,8 +56,6 @@
 ```bash
 python scripts/auto_generate.py my_story.json --output output/
 ```
-
-### 3. 获取结果
 
 生成完成后，您将得到：
 - `output/final/我的故事_final.mp4` - 最终视频
