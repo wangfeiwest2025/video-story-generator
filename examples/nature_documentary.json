@@ -1,0 +1,40 @@
+{
+  "title": "深海探秘",
+  "description": "自然纪录片 - 探索神秘的海底世界",
+  "style": "自然纪录片，水下摄影风格",
+  "resolution": "1344x768",
+  "fps": 24,
+  "target_duration_seconds": 120,
+  "voice": "zh-CN-XiaoxiaoNeural",
+  "scenes": [
+    {
+      "id": 1,
+      "narration": "在蔚蓝海洋的深处，隐藏着一个鲜为人知的神秘世界。阳光穿透海水，洒下一片金色的光芒。",
+      "visual_prompt": "Deep ocean underwater scene, sunlight penetrating blue water from above, creating golden beams, peaceful underwater environment, documentary style, 4K quality",
+      "audio": "underwater ambience, gentle water sounds, peaceful music"
+    },
+    {
+      "id": 2,
+      "narration": "色彩斑斓的珊瑚礁如同一座海底城市，成千上万的海洋生物在此栖息繁衍。",
+      "visual_prompt": "Colorful coral reef ecosystem, thousands of tropical fish swimming, vibrant colors, underwater city of marine life, documentary nature film, crystal clear water",
+      "audio": "underwater sounds, fish swimming, gentle nature music"
+    },
+    {
+      "id": 3,
+      "narration": "一群海豚在水中嬉戏，它们优雅的身姿划破海流，展现出生命的活力与自由。",
+      "visual_prompt": "Pod of dolphins playing in crystal clear water, graceful movement through ocean currents, jumping and swimming, dynamic underwater scene, nature documentary style",
+      "audio": "dolphin sounds, splashing water, joyful music"
+    },
+    {
+      "id": 4,
+      "narration": "巨大的鲸鱼缓缓游过，它们的歌声回荡在深海中，传递着古老的海洋智慧。",
+      "visual_prompt": "Massive whale swimming gracefully in deep ocean, majestic creature, whale song echoing underwater, serene blue environment, cinematic underwater shot",
+      "audio": "whale song, deep ocean sounds, meditative music"
+    }
+  ],
+  "metadata": {
+    "created": "2026-08-26",
+    "author": "AI Video Generator",
+    "tags": ["nature", "documentary", "ocean", "wildlife"]
+  }
+}

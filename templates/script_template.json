@@ -1,0 +1,30 @@
+{
+  "title": "我的AI短片",
+  "description": "短视频描述",
+  "style": "电影级",
+  "resolution": "1344x768",
+  "fps": 24,
+  "target_duration_seconds": 90,
+  "voice": "zh-CN-XiaoxiaoNeural",
+  "scenes": [
+    {
+      "id": 1,
+      "time": "0:00-0:15",
+      "narration": "在这个场景中，描述发生了什么...",
+      "visual_prompt": "Detailed visual description in English, including camera movement, lighting, style, subject",
+      "audio": "ambient sound description: music type, sound effects"
+    },
+    {
+      "id": 2,
+      "time": "0:15-0:30",
+      "narration": "继续讲述故事...",
+      "visual_prompt": "Another scene description",
+      "audio": "background music, nature sounds"
+    }
+  ],
+  "metadata": {
+    "created": "2026-08-26",
+    "author": "AI Video Generator",
+    "tags": ["video", "ai-generated"]
+  }
+}

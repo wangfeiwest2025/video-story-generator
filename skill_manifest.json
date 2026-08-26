@@ -1,0 +1,85 @@
+{
+  "name": "video-story-generator",
+  "version": "1.0.0",
+  "description": "AI驱动的短视频自动化制作技能 - 从脚本到成片",
+  "author": "AI Video Generator",
+  "created": "2026-08-26",
+
+  "components": {
+    "core": {
+      "SKILL.md": "完整技能文档",
+      "README.md": "项目说明",
+      "QUICKSTART.md": "快速开始指南",
+      "install.sh": "安装脚本"
+    },
+
+    "scripts": {
+      "auto_generate.py": "主自动化脚本 - 一键生成",
+      "check_environment.sh": "环境检查脚本"
+    },
+
+    "templates": {
+      "script_template.json": "脚本模板"
+    },
+
+    "examples": {
+      "scifi_story.json": "科幻动画示例（8场景）",
+      "nature_documentary.json": "自然纪录片示例（4场景）"
+    }
+  },
+
+  "requirements": {
+    "software": [
+      "Python 3.10+",
+      "ffmpeg",
+      "ComfyUI 0.34.0+"
+    ],
+    "python_packages": [
+      "edge-tts",
+      "mutagen",
+      "requests"
+    ],
+    "models": [
+      "minimax_h3_fl2va_int8_convrot.safetensors",
+      "qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors",
+      "minimax_h3_video_vae_fp16.safetensors",
+      "minimax_h3_audio_vae_fp32.safetensors"
+    ],
+    "hardware": {
+      "gpu": "NVIDIA RTX 3090+ (24GB+ VRAM推荐)",
+      "ram": "32GB+",
+      "storage": "100GB+"
+    }
+  },
+
+  "features": [
+    "音频驱动视频生成",
+    "原生音频自动生成",
+    "批量场景处理",
+    "端到端自动化",
+    "电影级画质",
+    "多种TTS语音选择"
+  ],
+
+  "usage": {
+    "command": "python3 scripts/auto_generate.py <script.json>",
+    "example": "python3 scripts/auto_generate.py examples/scifi_story.json"
+  },
+
+  "output": {
+    "video": "MP4格式，H.264编码",
+    "audio": "AAC立体声",
+    "resolution": "1344x768 (16:9)",
+    "fps": 24
+  },
+
+  "performance": {
+    "audio_generation": "~1分钟",
+    "video_generation": "~40-60分钟/场景",
+    "total_estimated": "1.5-2.5小时（8场景）"
+  },
+
+  "license": "MIT",
+  "repository": "local",
+  "documentation": "https://github.com/yourrepo/video-story-generator"
+}
