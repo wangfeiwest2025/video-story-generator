@@ -1,0 +1,70 @@
+{
+  "title": "AI短视频自动化制作技能介绍",
+  "style": "科技感，现代风格，动态展示",
+  "scenes": [
+    {
+      "id": 1,
+      "narration": "AI正在改变视频创作的方式。现在，从脚本到成片，只需一键即可完成。",
+      "visual_prompt": "Futuristic holographic interface appearing, AI brain icon pulsing with energy, digital transformation of video clips, modern tech aesthetic, blue and purple glow, cinematic intro",
+      "audio": "electronic ambient music, digital transformation sounds, whoosh effects"
+    },
+    {
+      "id": 2,
+      "narration": "欢迎使用AI短视频自动化制作技能。只需三步：创建脚本、调整参数、一键生成。",
+      "visual_prompt": "Clean modern UI interface showing three-step process, animated icons for script-parameters-generate, minimalist design, smooth transitions, professional tech style",
+      "audio": "gentle interface sounds, click effects, light ambient music"
+    },
+    {
+      "id": 3,
+      "narration": "在Web界面中，轻松编辑脚本。填写解说词、视觉描述和音频需求，AI自动理解您的创意。",
+      "visual_prompt": "Split screen showing web interface on left, AI processing visualization on right, script text transforming into video thumbnails, smooth animation, modern workspace",
+      "audio": "typing sounds, AI processing hum, pleasant notification sounds"
+    },
+    {
+      "id": 4,
+      "narration": "自定义参数：选择三种中文语音，调整视频分辨率，控制音频混音比例。完全符合您的需求。",
+      "visual_prompt": "Interactive parameter sliders and voice selection cards, colorful interface elements, sliders moving smoothly, settings being adjusted, user-friendly design",
+      "audio": "slider adjustment sounds, selection clicks, satisfying interface feedback"
+    },
+    {
+      "id": 5,
+      "narration": "点击开始，AI自动生成解说词音频，精确测量时长，计算视频帧数，MiniMax H3生成高质量画面。",
+      "visual_prompt": "Progress visualization: audio waveforms forming, timeline expanding, video frames appearing one by one, progress bar filling, cinematic creation process",
+      "audio": "AI generation sounds, progress indicators, futuristic processing ambience"
+    },
+    {
+      "id": 6,
+      "narration": "实时查看生成进度，监控ComfyUI队列，等待AI创作完成。每个场景约40分钟，全自动化无需人工干预。",
+      "visual_prompt": "Dashboard showing real-time progress, queue status, timer counting, completion percentages, modern monitoring interface, professional analytics view",
+      "audio": "data processing sounds, countdown timer, monitoring beeps"
+    },
+    {
+      "id": 7,
+      "narration": "生成完成！在线预览视频，一键下载最终作品或单个场景。电影级画质，原生立体声。",
+      "visual_prompt": "Video player interface appearing, play button glowing, video thumbnails loading, download icons, celebration effects, completed project showcase",
+      "audio": "completion sound, celebration chime, video playback sounds"
+    },
+    {
+      "id": 8,
+      "narration": "这就是AI短视频自动化制作技能。让每个人都能创作专业级AI短视频。立即开始您的创作之旅！",
+      "visual_prompt": "Montage of generated video examples, project showcase gallery, GitHub repository appearing, get started button, inspiring final scene, epic conclusion",
+      "audio": "uplifting music, inspiring melody, call-to-action sound effect"
+    }
+  ],
+
+  "metadata": {
+    "total_duration": "约2分钟",
+    "resolution": "1344x768",
+    "fps": 24,
+    "voice": "zh-CN-XiaoxiaoNeural",
+    "purpose": "项目介绍视频",
+    "target_audience": "潜在用户、开发者、投资人",
+    "key_features": [
+      "Web界面操作",
+      "音频驱动生成",
+      "参数可调",
+      "实时监控",
+      "一键完成"
+    ]
+  }
+}
