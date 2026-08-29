@@ -50,7 +50,7 @@ if st.button("🔍 检查配置", type="primary"):
 
                 **正确配置**:
                 - ComfyUI 端口: **8188**
-                - 正确地址: `https://m79vmeafz9-8188.cnb.run/`
+                - 正确地址: `https://xxx-8188.cnb.run/`
                 """)
             elif port == 8188:
                 st.success("✅ 端口正确: 8188 (ComfyUI 默认端口)")
@@ -113,7 +113,7 @@ if st.button("🔍 检查配置", type="primary"):
         在侧边栏中填写：
 
         ```
-        ComfyUI地址: https://m79vmeafz9-8188.cnb.run/
+        ComfyUI地址: https://xxx-8188.cnb.run/
         ComfyUI输出目录: (留空)
         ```
 
@@ -147,7 +147,7 @@ st.markdown("""
 ### 步骤 2: 修正配置
 
 如果发现错误，请修改：
-- **ComfyUI地址**: `https://m79vmeafz9-8188.cnb.run/`
+- **ComfyUI地址**: `https://xxx-8188.cnb.run/`
 - **ComfyUI输出目录**: 留空
 
 ### 步骤 3: 测试连接
@@ -181,7 +181,7 @@ with col1:
     ### ❌ 错误配置 (端口 8501)
 
     ```
-    ComfyUI地址: https://m79vmeafz9-8501.cnb.run/
+    ComfyUI地址: https://xxx-8501.cnb.run/
     ```
 
     **问题**:
@@ -201,7 +201,7 @@ with col2:
     ### ✅ 正确配置 (端口 8188)
 
     ```
-    ComfyUI地址: https://m79vmeafz9-8188.cnb.run/
+    ComfyUI地址: https://xxx-8188.cnb.run/
     ```
 
     **说明**:

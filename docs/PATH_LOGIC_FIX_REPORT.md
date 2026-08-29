@@ -109,7 +109,7 @@ if len(safe_title) > 100:
 
 **输入**：
 ```
-ComfyUI地址: https://m79vmeafz9-8188.cnb.run/
+ComfyUI地址: https://xxx-8188.cnb.run/
 ComfyUI输出目录: (留空)
 ```
 
@@ -182,7 +182,7 @@ comfyui_output_dir = None ✅
 ### 魔搭创空间
 
 ```
-ComfyUI地址: https://m79vmeafz9-8188.cnb.run/
+ComfyUI地址: https://xxx-8188.cnb.run/
 ComfyUI输出目录: (留空)
 ```
 

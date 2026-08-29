@@ -176,8 +176,8 @@ with st.sidebar:
 
             **示例配置**:
             ```
-            正确: https://m79vmeafz9-8188.cnb.run/
-            错误: https://m79vmeafz9-8501.cnb.run/
+            正确: https://xxx-8188.cnb.run/
+            错误: https://xxx-8501.cnb.run/
             ```
             """)
         except Exception as e:

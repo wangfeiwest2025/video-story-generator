@@ -89,7 +89,7 @@ with st.sidebar:
     st.markdown("### 🔌 ComfyUI设置")
     comfyui_url = st.text_input(
         "ComfyUI地址",
-        value="https://m79vmeafz9-8188.cnb.run"
+        value="http://127.0.0.1:8188"
     )
 
     # 测试连接
