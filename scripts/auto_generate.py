@@ -330,20 +330,28 @@ class VideoStoryGenerator:
             workflow = self.create_workflow(scene, timing)
             payload = {"prompt": workflow}
 
-            response = requests.post(
-                f"{self.comfyui_url}/prompt",
-                json=payload
-            )
+            print(f"   提交工作流到: {self.comfyui_url}/prompt")
 
-            if response.status_code == 200:
-                prompt_id = response.json()['prompt_id']
-                prompt_ids.append({
-                    "scene_id": scene['id'],
-                    "prompt_id": prompt_id
-                })
-                print(f"   ✅ 已提交: {prompt_id}")
-            else:
-                print(f"   ❌ 提交失败")
+            try:
+                response = requests.post(
+                    f"{self.comfyui_url}/prompt",
+                    json=payload,
+                    timeout=30
+                )
+
+                if response.status_code == 200:
+                    prompt_id = response.json()['prompt_id']
+                    prompt_ids.append({
+                        "scene_id": scene['id'],
+                        "prompt_id": prompt_id
+                    })
+                    print(f"   ✅ 已提交: {prompt_id}")
+                else:
+                    print(f"   ❌ 提交失败: HTTP {response.status_code}")
+                    print(f"   响应内容: {response.text[:200]}")
+            except Exception as e:
+                print(f"   ❌ 提交异常: {e}")
+                print(f"   请检查 ComfyUI 是否正在运行")
 
         print()
         print(f"✨ 已提交 {len(prompt_ids)} 个任务")
@@ -569,11 +577,17 @@ class VideoStoryGenerator:
         # 阶段1: 生成音频
         await self.generate_narration_audio()
 
-        # 检查模型
-        if not self.check_minimax_models():
+        # 检查模型（警告但不中断流程）
+        print()
+        print("⚠️  即将检查 MiniMax H3 模型...")
+        models_ok = self.check_minimax_models()
+        if not models_ok:
             print()
-            print("❌ 模型检查失败，无法继续生成")
-            return None
+            print("⚠️  警告: 部分模型未找到，但将继续尝试生成")
+            print("   如果生成失败，请检查模型是否正确安装")
+        else:
+            print()
+            print("✅ 所有模型检查通过")
 
         # 获取音频时长
         scene_timing = self.get_audio_durations()

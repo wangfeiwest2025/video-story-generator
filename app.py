@@ -283,25 +283,43 @@ with tab2:
                                 ambient_volume=ambient_volume
                             )
 
+                            # 运行完整流程
                             set_status("running", "生成音频...")
                             asyncio.run(gen.generate_narration_audio())
 
-                            set_status("running", "提交视频生成任务...")
+                            # 检查模型
+                            set_status("running", "检查 MiniMax H3 模型...")
+                            gen.check_minimax_models()
+
+                            # 获取音频时长
+                            set_status("running", "计算音频时长...")
                             scene_timing = gen.get_audio_durations()
+
+                            # 提交视频生成任务
+                            set_status("running", "提交视频生成任务到 ComfyUI...")
                             prompt_ids = gen.submit_all_videos(scene_timing)
 
-                            set_status("running", f"已提交 {len(prompt_ids)} 个任务到 ComfyUI")
+                            if not prompt_ids:
+                                set_status("error", "", "未能提交任何视频生成任务，请检查 ComfyUI 连接")
+                                return
+
+                            set_status("running", f"已提交 {len(prompt_ids)} 个任务到 ComfyUI，等待完成...")
 
                             # 等待完成
                             gen.wait_for_completion(prompt_ids, check_interval=60)
 
+                            # 混合音频
                             set_status("running", "混合音频...")
                             gen.mix_audio()
 
+                            # 合成最终视频
                             set_status("running", "合成最终视频...")
-                            gen.compose_final_video()
+                            final_video = gen.compose_final_video()
 
-                            set_status("completed", f"视频已生成到: {output_dir}")
+                            if final_video:
+                                set_status("completed", f"视频已生成到: {output_dir}")
+                            else:
+                                set_status("error", "", "视频合成失败")
 
                         except Exception as e:
                             import traceback
