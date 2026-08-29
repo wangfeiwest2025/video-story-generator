@@ -1,0 +1,19 @@
+# AI短视频生成器 - Python依赖
+
+# Web界面
+streamlit>=1.30.0
+
+# TTS语音合成
+edge-tts>=6.1.0
+
+# 音频处理（MP3元数据读取）
+mutagen>=1.47.0
+
+# 网络请求（ComfyUI API调用）
+requests>=2.31.0
+
+# 图像处理
+Pillow>=10.0.0
+
+# 注意：ffmpeg 需要通过系统包管理器安装
+# 在 Dockerfile 或部署脚本中使用: apt-get install ffmpeg
