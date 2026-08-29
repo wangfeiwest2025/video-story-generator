@@ -122,6 +122,28 @@ with st.sidebar:
 
     steps = st.slider("采样步数", min_value=15, max_value=30, value=20)
 
+    # 音频参数
+    st.markdown("---")
+    st.markdown("### 🔊 音频参数")
+
+    narration_volume = st.slider(
+        "解说词音量",
+        min_value=0.5,
+        max_value=2.0,
+        value=1.2,
+        step=0.1,
+        help="解说词相对于原始音量的倍数"
+    )
+
+    ambient_volume = st.slider(
+        "环境音音量",
+        min_value=0.1,
+        max_value=1.0,
+        value=0.5,
+        step=0.1,
+        help="环境音相对于原始音量的倍数"
+    )
+
 # 主界面
 st.markdown('<h1 class="main-header">🎬 AI短视频生成器</h1>', unsafe_allow_html=True)
 st.markdown("---")
@@ -248,7 +270,9 @@ with tab2:
                                 voice=voice,
                                 width=width,
                                 height=height,
-                                steps=steps
+                                steps=steps,
+                                narration_volume=narration_volume,
+                                ambient_volume=ambient_volume
                             )
 
                             set_status("running", "生成音频...")
@@ -340,65 +364,80 @@ with tab3:
 with tab4:
     st.markdown('<h2 class="sub-header">🎥 结果预览</h2>', unsafe_allow_html=True)
 
-    # 1. 检查 ComfyUI 输出目录
-    comfyui_output = Path("/workspace/ComfyUI/output")
-    if comfyui_output.exists():
-        # 查找所有 MP4 文件
-        all_videos = list(comfyui_output.rglob("*.mp4"))
-        if all_videos:
-            st.markdown("### 🎬 生成的视频")
-            for video in sorted(all_videos, key=lambda x: x.stat().st_mtime, reverse=True)[:5]:
-                size_mb = video.stat().st_size / 1024 / 1024
-                mtime = datetime.fromtimestamp(video.stat().st_mtime).strftime("%H:%M:%S")
-                col1, col2 = st.columns([3, 1])
-                with col1:
-                    st.write(f"**{video.name}** ({size_mb:.2f} MB) - {mtime}")
-                with col2:
-                    if st.button(f"▶️ 预览", key=f"preview_{video.name}"):
-                        st.video(str(video))
-                    with open(video, 'rb') as f:
-                        st.download_button(
-                            f"📥 下载",
-                            f,
-                            file_name=video.name,
-                            mime="video/mp4",
-                            key=f"download_{video.name}"
-                        )
-
-    # 2. 检查项目输出目录
+    # 1. 检查项目输出目录（主要）
     output_base = Path("/workspace/output")
     if output_base.exists():
-        output_dirs = sorted([d for d in output_base.iterdir() if d.is_dir()], reverse=True)
+        # 找到所有项目目录
+        output_dirs = sorted([d for d in output_base.iterdir() if d.is_dir() and d.name.startswith("202")],
+                            reverse=True)
+
         if output_dirs:
-            latest_output = output_dirs[0]
-            st.markdown("### 📂 项目输出目录")
-            st.info(f"最新输出: `{latest_output.name}`")
+            # 检查最新的完整项目
+            for project_dir in output_dirs[:3]:  # 检查最新的3个项目
+                final_dir = project_dir / "final"
+                video_dir = project_dir / "video"
+                audio_dir = project_dir / "audio"
 
-            # 查找音频文件
-            audio_files = list((latest_output / "audio").glob("*.mp3")) if (latest_output / "audio").exists() else []
-            if audio_files:
-                st.markdown(f"**音频文件**: {len(audio_files)} 个")
-                for audio in audio_files[:3]:
-                    st.audio(str(audio))
+                # 检查是否有最终视频
+                final_videos = list(final_dir.glob("*_final.mp4")) if final_dir.exists() else []
+                mixed_videos = list(final_dir.glob("*_mixed.mp4")) if final_dir.exists() else []
+                scene_videos = list(video_dir.glob("*.mp4")) if video_dir.exists() else []
 
-            # 查找视频文件
-            video_files = list(latest_output.rglob("*.mp4"))
-            if video_files:
-                st.markdown(f"**视频文件**: {len(video_files)} 个")
-                for video in video_files[:3]:
-                    st.video(str(video))
-            else:
-                st.info("视频正在生成中...")
+                if final_videos or mixed_videos or scene_videos:
+                    st.markdown(f"### 📁 项目: {project_dir.name}")
 
-    # 3. 显示帮助信息
-    if not (comfyui_output.exists() or output_base.exists()):
-        st.info("ℹ️ 暂无输出文件")
-        st.markdown("""
-        **提示**：
-        - 生成的视频保存在 ComfyUI 的输出目录
-        - 点击"开始生成"后会自动创建输出文件
-        - 视频生成需要 5-10 分钟，请耐心等待
-        """)
+                    # 显示最终视频
+                    if final_videos:
+                        st.markdown("#### 🎬 最终完整视频")
+                        for video in sorted(final_videos):
+                            size_mb = video.stat().st_size / 1024 / 1024
+                            mtime = datetime.fromtimestamp(video.stat().st_mtime).strftime("%H:%M:%S")
+
+                            with st.expander(f"✅ {video.name} ({size_mb:.2f} MB) - {mtime}", expanded=(video == final_videos[0])):
+                                st.success("✅ 包含完整解说词和环境音")
+
+                                col1, col2 = st.columns(2)
+                                with col1:
+                                    st.video(str(video))
+                                with col2:
+                                    with open(video, 'rb') as f:
+                                        st.download_button(
+                                            f"📥 下载最终视频",
+                                            f,
+                                            file_name=video.name,
+                                            mime="video/mp4",
+                                            key=f"download_{project_dir.name}_{video.name}"
+                                        )
+
+                    # 显示混合视频（含解说词）
+                    if mixed_videos:
+                        st.markdown("#### 🎵 场景视频（含解说词）")
+                        for video in sorted(mixed_videos):
+                            size_mb = video.stat().st_size / 1024 / 1024
+
+                            col1, col2 = st.columns([3, 1])
+                            with col1:
+                                st.write(f"**{video.name}** ({size_mb:.2f} MB)")
+                            with col2:
+                                with open(video, 'rb') as f:
+                                    st.download_button(
+                                        "📥",
+                                        f,
+                                        file_name=video.name,
+                                        mime="video/mp4",
+                                        key=f"dl_{project_dir.name}_{video.name}"
+                                    )
+
+                    # 显示解说词音频
+                    audio_files = list(audio_dir.glob("*.mp3")) if audio_dir.exists() else []
+                    if audio_files:
+                        with st.expander(f"🎙️ 解说词音频 ({len(audio_files)} 个)"):
+                            for audio in audio_files[:3]:
+                                size_kb = audio.stat().st_size / 1024
+                                st.write(f"- {audio.name} ({size_kb:.1f} KB)")
+                                st.audio(str(audio))
+
+                    st.markdown("---")
 
 # 页脚
 st.markdown("---")

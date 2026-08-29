@@ -18,7 +18,7 @@ import shutil
 class VideoStoryGenerator:
     """AI短视频生成器"""
 
-    def __init__(self, script_file, output_dir="output", comfyui_url=None, voice=None,
+    def __init__(self, script_file, output_dir="output", comfyui_url=None, comfyui_output_dir=None, voice=None,
                  width=1344, height=768, steps=20, narration_volume=1.2, ambient_volume=0.5):
         self.script_file = Path(script_file) if script_file else None
         self.output_dir = Path(output_dir)
@@ -55,6 +55,35 @@ class VideoStoryGenerator:
         # ComfyUI API - 支持外部链接
         self.comfyui_url = comfyui_url or "http://127.0.0.1:8188"
         print(f"🔌 ComfyUI地址: {self.comfyui_url}")
+
+        # 验证 ComfyUI 连接
+        try:
+            response = requests.get(f"{self.comfyui_url}/system_stats", timeout=5)
+            if response.status_code == 200:
+                print(f"✅ ComfyUI 连接成功")
+            else:
+                print(f"⚠️  ComfyUI 响应异常: HTTP {response.status_code}")
+        except Exception as e:
+            print(f"⚠️  无法连接 ComfyUI: {e}")
+            print(f"   请确保 ComfyUI 已启动并运行在 {self.comfyui_url}")
+
+        # ComfyUI 输出目录 - 优先使用参数，否则尝试自动检测
+        self.comfyui_output_dir = comfyui_output_dir
+        if not self.comfyui_output_dir:
+            try:
+                # 尝试通过 API 获取输出目录
+                response = requests.get(f"{self.comfyui_url}/object_info", timeout=5)
+                if response.status_code == 200:
+                    # 假设输出目录在 ComfyUI 工作目录下的 output 文件夹
+                    # 如果无法获取，使用默认路径
+                    self.comfyui_output_dir = "/workspace/output"
+                    print(f"📁 ComfyUI输出目录: {self.comfyui_output_dir} (默认)")
+            except:
+                # 如果无法连接，使用默认路径
+                self.comfyui_output_dir = "/workspace/output"
+                print(f"📁 ComfyUI输出目录: {self.comfyui_output_dir} (默认)")
+        else:
+            print(f"📁 ComfyUI输出目录: {self.comfyui_output_dir} (自定义)")
 
     async def generate_narration_audio(self):
         """阶段1: 生成解说词音频"""
@@ -104,8 +133,10 @@ class VideoStoryGenerator:
             total_duration += duration_seconds
 
             # 计算MiniMax H3要求的帧数
+            # MiniMax H3 要求 length ≡ 1 (mod 17)，即 1, 18, 35, 52, ...
             frames_needed = round(duration_seconds * 24)
-            length = max(5, frames_needed) + (5 - (max(5, frames_needed) % 17)) % 17
+            # 向上对齐到最近的 17n+1，最小值为 18 (17*1+1)
+            length = max(18, ((frames_needed - 1 + 16) // 17) * 17 + 1)
 
             scene_timing.append({
                 "scene_id": scene['id'],
@@ -229,6 +260,60 @@ class VideoStoryGenerator:
             }
         }
 
+    def check_minimax_models(self):
+        """检查 MiniMax H3 模型是否存在"""
+        print()
+        print("=" * 80)
+        print("🔍 检查 MiniMax H3 模型")
+        print("=" * 80)
+        print()
+
+        try:
+            response = requests.get(f"{self.comfyui_url}/object_info", timeout=10)
+            if response.status_code == 200:
+                object_info = response.json()
+
+                # 检查必需的模型
+                required_models = {
+                    "UNETLoader": ["minimax_h3_fl2va_int8_convrot.safetensors"],
+                    "CLIPLoader": ["qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors"],
+                    "VAELoader": [
+                        "minimax_h3_video_vae_fp16.safetensors",
+                        "minimax_h3_audio_vae_fp32.safetensors"
+                    ]
+                }
+
+                all_ok = True
+                for node_type, model_names in required_models.items():
+                    if node_type in object_info:
+                        available_models = object_info[node_type].get('input', {}).get('required', {}).get('unet_name' if node_type == 'UNETLoader' else 'clip_name' if node_type == 'CLIPLoader' else 'vae_name', [[]])[0]
+
+                        for model_name in model_names:
+                            if model_name in available_models:
+                                print(f"✅ {model_name}")
+                            else:
+                                print(f"❌ {model_name} - 未找到")
+                                all_ok = False
+                    else:
+                        print(f"❌ {node_type} - 节点类型未找到")
+                        all_ok = False
+
+                if not all_ok:
+                    print()
+                    print("⚠️  缺少必需的模型，请先下载 MiniMax H3 模型")
+                    return False
+
+                print()
+                print("✨ 所有模型检查通过")
+                return True
+            else:
+                print(f"❌ 无法获取模型信息: HTTP {response.status_code}")
+                return False
+
+        except Exception as e:
+            print(f"❌ 检查模型失败: {e}")
+            return False
+
     def submit_all_videos(self, scene_timing):
         """阶段2: 提交所有视频生成任务"""
         print()
@@ -270,13 +355,15 @@ class VideoStoryGenerator:
 
         return prompt_ids
 
-    def wait_for_completion(self, prompt_ids, check_interval=300):
+    def wait_for_completion(self, prompt_ids, check_interval=60):
         """等待所有视频生成完成"""
         print()
         print("=" * 80)
         print("⏳ 等待视频生成完成...")
         print("=" * 80)
         print()
+
+        print(f"💡 检查间隔: {check_interval}秒")
 
         start_time = time.time()
         completed = set()
@@ -287,21 +374,21 @@ class VideoStoryGenerator:
                     continue
 
                 try:
-                    response = requests.get(
-                        f"{self.comfyui_url}/history/{item['prompt_id']}"
-                    )
+                        response = requests.get(
+                            f"{self.comfyui_url}/history/{item['prompt_id']}"
+                        )
 
-                    if response.status_code == 200:
-                        history = response.json()
+                        if response.status_code == 200:
+                            history = response.json()
 
-                        if item['prompt_id'] in history:
-                            status = history[item['prompt_id']].get('status', {})
-                            if status.get('completed', False):
-                                completed.add(item['prompt_id'])
-                                print(f"✅ 场景 {item['scene_id']:02d} 完成")
+                            if item['prompt_id'] in history:
+                                status = history[item['prompt_id']].get('status', {})
+                                if status.get('completed', False):
+                                    completed.add(item['prompt_id'])
+                                    print(f"✅ 场景 {item['scene_id']:02d} 完成")
 
-                except Exception:
-                    pass
+                except Exception as e:
+                    print(f"⚠️  检查任务状态失败: {e}")
 
             if len(completed) < len(prompt_ids):
                 time.sleep(check_interval)
@@ -309,6 +396,31 @@ class VideoStoryGenerator:
         elapsed = time.time() - start_time
         print()
         print(f"✨ 所有视频生成完成！耗时: {elapsed/60:.1f} 分钟")
+        print()
+
+        # 复制视频文件到项目输出目录
+        print("📋 复制视频文件到项目目录...")
+        comfyui_output = Path(self.comfyui_output_dir)
+
+        for item in prompt_ids:
+            scene_id = item['scene_id']
+
+            # 在 ComfyUI 输出目录查找视频
+            video_pattern = f"scene_{scene_id:02d}_*.mp4"
+            videos = list(comfyui_output.rglob(video_pattern))
+
+            if videos:
+                # 找到最新的视频
+                latest_video = max(videos, key=lambda x: x.stat().st_mtime)
+
+                # 复制到项目目录
+                dest_file = self.video_dir / latest_video.name
+                shutil.copy(str(latest_video), str(dest_file))
+                print(f"   ✅ 场景 {scene_id:02d}: {latest_video.name}")
+            else:
+                print(f"   ⚠️  场景 {scene_id:02d}: 未找到视频文件")
+
+        print()
 
     def mix_audio(self):
         """阶段3: 混合音频"""
@@ -343,7 +455,7 @@ class VideoStoryGenerator:
                 "-i", str(video_file),
                 "-i", str(audio_file),
                 "-filter_complex",
-                "[0:a]volume=0.5[env];[1:a]volume=1.2[narr];[env][narr]amix=inputs=2:duration=first[aout]",
+                f"[0:a]volume={self.ambient_volume}[env];[1:a]volume={self.narration_volume}[narr];[env][narr]amix=inputs=2:duration=first[aout]",
                 "-map", "0:v", "-map", "[aout]",
                 "-c:v", "copy", "-c:a", "aac",
                 str(output_file)
@@ -431,6 +543,12 @@ class VideoStoryGenerator:
         # 阶段1: 生成音频
         await self.generate_narration_audio()
 
+        # 检查模型
+        if not self.check_minimax_models():
+            print()
+            print("❌ 模型检查失败，无法继续生成")
+            return None
+
         # 获取音频时长
         scene_timing = self.get_audio_durations()
 
@@ -457,6 +575,8 @@ def main():
     # ComfyUI设置
     parser.add_argument("--comfyui-url", default=None,
                         help="ComfyUI服务器地址（默认: http://127.0.0.1:8188）")
+    parser.add_argument("--comfyui-output-dir", default=None,
+                        help="ComfyUI输出目录（默认: /workspace/output）")
 
     # 视频参数
     parser.add_argument("--width", type=int, default=1344, help="视频宽度")
@@ -477,6 +597,7 @@ def main():
         script_file=args.script,
         output_dir=args.output,
         comfyui_url=args.comfyui_url,
+        comfyui_output_dir=args.comfyui_output_dir,
         voice=args.voice,
         width=args.width,
         height=args.height,
