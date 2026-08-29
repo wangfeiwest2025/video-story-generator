@@ -117,6 +117,25 @@ with st.sidebar:
     if st.button("🔌 测试连接", use_container_width=True):
         try:
             import requests
+
+            # 显示当前配置
+            st.info(f"正在测试: `{comfyui_url}`")
+
+            # 检查端口
+            import re
+            port_match = re.search(r':(\d+)', comfyui_url)
+            if port_match:
+                port = int(port_match.group(1))
+                if port == 8501:
+                    st.error("⚠️ **端口错误**: 8501 是 Streamlit 端口，不是 ComfyUI！")
+                    st.markdown("""
+                    **正确配置**:
+                    - ComfyUI 默认端口: **8188**
+                    - 正确地址示例: `https://xxx-8188.cnb.run/`
+                    """)
+                elif port != 8188:
+                    st.warning(f"⚠️ 非标准端口: {port}（ComfyUI 通常使用 8188）")
+
             response = requests.get(f"{comfyui_url}/system_stats", timeout=10)
             if response.status_code == 200:
                 st.success("✅ ComfyUI连接成功！")
@@ -125,6 +144,12 @@ with st.sidebar:
                 try:
                     data = response.json()
                     st.info(f"ComfyUI 版本: {data.get('system', {}).get('comfyui_version', 'unknown')}")
+
+                    # 检查 GPU
+                    devices = data.get('devices', [])
+                    if devices:
+                        gpu_name = devices[0].get('name', 'Unknown')
+                        st.info(f"GPU: {gpu_name}")
                 except:
                     pass
             else:
@@ -133,7 +158,7 @@ with st.sidebar:
             st.error("❌ 连接超时，请检查地址是否正确")
         except requests.exceptions.ConnectionError:
             st.error(f"❌ 无法连接到 {comfyui_url}")
-            st.markdown("""
+            st.markdown(f"""
             **可能的原因**:
             - ComfyUI 未启动
             - 地址错误
@@ -143,6 +168,16 @@ with st.sidebar:
             - 确认 ComfyUI 正在运行
             - 检查地址和端口是否正确
             - 如果 ComfyUI 在外部，确保网络可访问
+
+            **端口检查**:
+            - ✅ ComfyUI 正确端口: 8188
+            - ❌ Streamlit 端口: 8501（不要使用这个）
+
+            **示例配置**:
+            ```
+            正确: https://m79vmeafz9-8188.cnb.run/
+            错误: https://m79vmeafz9-8501.cnb.run/
+            ```
             """)
         except Exception as e:
             st.error(f"❌ 连接失败: {str(e)}")
@@ -354,12 +389,32 @@ with tab2:
                                 prompt_ids = gen.submit_all_videos(scene_timing)
 
                                 if not prompt_ids:
-                                    set_status("error", "", f"未能提交任何视频生成任务。请检查: 1) ComfyUI 是否运行在 {comfyui_url} 2) 网络是否连通 3) 查看控制台日志获取详细错误")
+                                    error_msg = (
+                                        f"未能提交任何视频生成任务。\n\n"
+                                        f"**请检查**:\n"
+                                        f"1) ComfyUI 是否运行在 **{comfyui_url}** ？\n"
+                                        f"2) 网络是否连通？\n"
+                                        f"3) 端口是否正确？（ComfyUI 默认端口: 8188）\n\n"
+                                        f"**常见错误**:\n"
+                                        f"- ❌ 端口 8501 是 Streamlit 端口，不是 ComfyUI\n"
+                                        f"- ✅ 正确的端口应该是 8188\n"
+                                        f"- 例如: https://xxx-8188.cnb.run/ （注意端口是 8188）\n\n"
+                                        f"请确认侧边栏中的 ComfyUI 地址配置正确。"
+                                    )
+                                    set_status("error", "", error_msg)
                                     return
 
                                 set_status("running", f"✅ 已提交 {len(prompt_ids)} 个任务到 ComfyUI")
                             except Exception as e:
-                                set_status("error", "", f"提交任务失败: {str(e)}。请检查 ComfyUI 是否正常运行在 {comfyui_url}")
+                                error_msg = (
+                                    f"提交任务失败: {str(e)}\n\n"
+                                    f"**当前 ComfyUI 地址**: {comfyui_url}\n\n"
+                                    f"**请确认**:\n"
+                                    f"- 地址格式正确（以 http:// 或 https:// 开头）\n"
+                                    f"- 端口是 8188（不是 8501）\n"
+                                    f"- ComfyUI 正在运行"
+                                )
+                                set_status("error", "", error_msg)
                                 return
 
                             # 等待完成
