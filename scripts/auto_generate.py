@@ -67,20 +67,26 @@ class VideoStoryGenerator:
             print(f"⚠️  无法连接 ComfyUI: {e}")
             print(f"   请确保 ComfyUI 已启动并运行在 {self.comfyui_url}")
 
-        # ComfyUI 输出目录 - 优先使用参数，否则尝试自动检测
+        # ComfyUI 输出目录 - 用户必须明确指定或留空
         self.comfyui_output_dir = comfyui_output_dir
-        if not self.comfyui_output_dir:
-            # 如果没有指定，检查是否可以访问默认路径
-            default_path = "/workspace/output"
-            if Path(default_path).exists():
-                self.comfyui_output_dir = default_path
-                print(f"📁 ComfyUI输出目录: {self.comfyui_output_dir} (自动检测)")
+
+        # 检查是否是明确的路径（非空字符串）
+        if self.comfyui_output_dir and self.comfyui_output_dir.strip():
+            # 用户明确指定了路径
+            self.comfyui_output_dir = self.comfyui_output_dir.strip()
+            print(f"📁 ComfyUI输出目录: {self.comfyui_output_dir} (用户指定)")
+
+            # 检查路径是否存在
+            if Path(self.comfyui_output_dir).exists():
+                print(f"   ✅ 路径可访问")
             else:
-                self.comfyui_output_dir = None
-                print(f"📁 ComfyUI输出目录: 未指定（将通过 API 下载视频）")
-                print(f"   💡 这通常发生在 ComfyUI 部署在远程服务器时")
+                print(f"   ⚠️  路径不存在，将尝试创建或使用 API 下载")
         else:
-            print(f"📁 ComfyUI输出目录: {self.comfyui_output_dir} (自定义)")
+            # 用户留空，强制使用 API 下载
+            self.comfyui_output_dir = None
+            print(f"📁 ComfyUI输出目录: 未指定（将通过 API 下载视频）")
+            print(f"   💡 这适用于 ComfyUI 部署在远程服务器的场景")
+            print(f"   💡 如需文件复制，请在配置中明确指定输出目录路径")
 
     async def generate_narration_audio(self):
         """阶段1: 生成解说词音频"""
@@ -637,9 +643,13 @@ class VideoStoryGenerator:
 
             # 重命名为最终视频
             title = self.script['title']
-            safe_title = "".join(c for c in title if c.isalnum() or c in (' ', '-', '_')).strip()
+            # 清理文件名（保留中文、字母、数字、空格、下划线、短横线）
+            safe_title = "".join(c for c in title if c not in '/\\:*?"<>|').strip()
             if not safe_title:
                 safe_title = "video"
+            # 限制长度
+            if len(safe_title) > 100:
+                safe_title = safe_title[:100]
 
             final_video = self.final_dir / f"{safe_title}_final.mp4"
 
@@ -687,12 +697,17 @@ class VideoStoryGenerator:
             print("❌ 场景列表文件为空，无法合成")
             return None
 
-        # 最终视频文件名 - 移除特殊字符
+        # 最终视频文件名 - 清理特殊字符
         title = self.script['title']
-        # 清理文件名，移除可能导致问题的字符
-        safe_title = "".join(c for c in title if c.isalnum() or c in (' ', '-', '_')).strip()
+        # 清理文件名，移除可能导致问题的字符（保留中文、字母、数字）
+        # 移除: / \ : * ? " < > | 等文件系统不支持的字符
+        safe_title = "".join(c for c in title if c not in '/\\:*?"<>|').strip()
         if not safe_title:
             safe_title = "video"
+
+        # 确保文件名不会太长（限制在 100 字符）
+        if len(safe_title) > 100:
+            safe_title = safe_title[:100]
 
         final_video = self.final_dir / f"{safe_title}_final.mp4"
 
