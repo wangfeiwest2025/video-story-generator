@@ -13,6 +13,7 @@ import threading
 from pathlib import Path
 from datetime import datetime
 import subprocess
+import tempfile
 
 # 添加项目路径
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -57,8 +58,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 状态文件路径
-STATUS_FILE = Path("/tmp/video_generation_status.json")
+# 状态文件路径（使用跨平台临时目录）
+STATUS_FILE = Path(tempfile.gettempdir()) / "video_generation_status.json"
 
 def get_status():
     """从文件读取状态"""
@@ -88,18 +89,32 @@ with st.sidebar:
     st.markdown("### 🔌 ComfyUI设置")
     comfyui_url = st.text_input(
         "ComfyUI地址",
-        value="http://127.0.0.1:8188"
+        value="https://m79vmeafz9-8188.cnb.run"
     )
 
     # 测试连接
     if st.button("🔌 测试连接", use_container_width=True):
         try:
             import requests
-            response = requests.get(f"{comfyui_url}/system_stats", timeout=5)
-            if response.status_code == 200:
+            import time
+            # 隧道偶尔返回HTML页面，重试3次
+            ok = False
+            last_err = ""
+            for attempt in range(1, 4):
+                try:
+                    response = requests.get(f"{comfyui_url}/system_stats", timeout=10)
+                    if response.status_code == 200 and response.headers.get('content-type', '').startswith('application/json'):
+                        ok = True
+                        break
+                    last_err = f"HTTP {response.status_code}"
+                except Exception as e:
+                    last_err = str(e)
+                time.sleep(2 * attempt)
+
+            if ok:
                 st.success("✅ ComfyUI连接成功！")
             else:
-                st.error(f"❌ 连接失败: HTTP {response.status_code}")
+                st.error(f"❌ 连接失败: {last_err}")
         except Exception as e:
             st.error(f"❌ 连接失败: {str(e)}")
 
@@ -250,12 +265,12 @@ with tab2:
                     set_status("running", "正在初始化...")
 
                     # 保存脚本
-                    temp_script = Path("/tmp/current_script.json")
+                    temp_script = Path(tempfile.gettempdir()) / "current_script.json"
                     with open(temp_script, 'w', encoding='utf-8') as f:
                         json.dump(st.session_state.script, f, ensure_ascii=False, indent=2)
 
                     # 创建输出目录
-                    output_dir = Path("/workspace/output") / datetime.now().strftime("%Y%m%d_%H%M%S")
+                    output_dir = Path(__file__).parent.parent / "output" / datetime.now().strftime("%Y%m%d_%H%M%S")
                     output_dir.mkdir(parents=True, exist_ok=True)
 
                     # 后台生成函数
@@ -332,9 +347,19 @@ with tab3:
         # 显示 ComfyUI 队列
         try:
             import requests
-            response = requests.get(f"{comfyui_url}/queue", timeout=5)
-            if response.status_code == 200:
-                queue_data = response.json()
+            # 隧道偶尔返回HTML页面，重试3次
+            queue_data = None
+            for attempt in range(1, 4):
+                try:
+                    response = requests.get(f"{comfyui_url}/queue", timeout=10)
+                    if response.status_code == 200 and response.headers.get('content-type', '').startswith('application/json'):
+                        queue_data = response.json()
+                        break
+                except Exception:
+                    pass
+                time.sleep(2 * attempt)
+
+            if queue_data is not None:
                 running = len(queue_data.get('queue_running', []))
                 pending = len(queue_data.get('queue_pending', []))
                 st.metric("ComfyUI 队列", f"{running} 运行中 / {pending} 等待")
@@ -365,7 +390,7 @@ with tab4:
     st.markdown('<h2 class="sub-header">🎥 结果预览</h2>', unsafe_allow_html=True)
 
     # 1. 检查项目输出目录（主要）
-    output_base = Path("/workspace/output")
+    output_base = Path(__file__).parent.parent / "output"
     if output_base.exists():
         # 找到所有项目目录
         output_dirs = sorted([d for d in output_base.iterdir() if d.is_dir() and d.name.startswith("202")],

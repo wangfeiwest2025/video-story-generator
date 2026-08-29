@@ -13,6 +13,7 @@ import threading
 from pathlib import Path
 from datetime import datetime
 import subprocess
+import tempfile
 
 # 添加项目路径
 sys.path.insert(0, str(Path(__file__).parent))
@@ -57,8 +58,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 状态文件路径
-STATUS_FILE = Path("/tmp/video_generation_status.json")
+# 状态文件路径（使用跨平台临时目录）
+STATUS_FILE = Path(tempfile.gettempdir()) / "video_generation_status.json"
 
 def get_status():
     """从文件读取状态"""
@@ -329,7 +330,7 @@ with tab2:
                     set_status("running", "正在初始化...")
 
                     # 保存脚本
-                    temp_script = Path("/tmp/current_script.json")
+                    temp_script = Path(tempfile.gettempdir()) / "current_script.json"
                     with open(temp_script, 'w', encoding='utf-8') as f:
                         json.dump(st.session_state.script, f, ensure_ascii=False, indent=2)
 

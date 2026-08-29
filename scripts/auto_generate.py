@@ -11,9 +11,14 @@ import edge_tts
 import requests
 import time
 import subprocess
+import sys
 from pathlib import Path
 from datetime import datetime
 import shutil
+
+# 控制台UTF-8输出（避免Windows GBK控制台打印emoji时编码报错）
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 
 class VideoStoryGenerator:
     """AI短视频生成器"""
@@ -58,11 +63,8 @@ class VideoStoryGenerator:
 
         # 验证 ComfyUI 连接
         try:
-            response = requests.get(f"{self.comfyui_url}/system_stats", timeout=5)
-            if response.status_code == 200:
-                print(f"✅ ComfyUI 连接成功")
-            else:
-                print(f"⚠️  ComfyUI 响应异常: HTTP {response.status_code}")
+            response = self._request_json('GET', '/system_stats', timeout=10)
+            print(f"✅ ComfyUI 连接成功")
         except Exception as e:
             print(f"⚠️  无法连接 ComfyUI: {e}")
             print(f"   请确保 ComfyUI 已启动并运行在 {self.comfyui_url}")
@@ -87,6 +89,43 @@ class VideoStoryGenerator:
             print(f"📁 ComfyUI输出目录: 未指定（将通过 API 下载视频）")
             print(f"   💡 这适用于 ComfyUI 部署在远程服务器的场景")
             print(f"   💡 如需文件复制，请在配置中明确指定输出目录路径")
+
+    def _request_json(self, method, path, timeout=30, json_body=None, retries=5, retry_delay=2):
+        """请求ComfyUI API并返回响应，自动重试（应对隧道间歇性返回非JSON页面）"""
+        last_error = None
+        for attempt in range(1, retries + 1):
+            try:
+                if method == 'POST':
+                    response = requests.post(f"{self.comfyui_url}{path}", json=json_body, timeout=timeout)
+                else:
+                    response = requests.get(f"{self.comfyui_url}{path}", timeout=timeout)
+
+                content_type = response.headers.get('content-type', '')
+                if response.status_code >= 500 or not content_type.startswith('application/json'):
+                    last_error = f"HTTP {response.status_code}, 非JSON响应: {response.text[:100]!r}"
+                    print(f"   ⚠️  第{attempt}次请求异常: {last_error}")
+                    time.sleep(retry_delay * attempt)
+                    continue
+                return response
+            except Exception as e:
+                last_error = str(e)
+                print(f"   ⚠️  第{attempt}次请求失败: {e}")
+                time.sleep(retry_delay * attempt)
+
+        raise RuntimeError(f"ComfyUI API 请求失败({method} {path}): {last_error}")
+
+    def _find_ffmpeg(self):
+        """定位 ffmpeg 可执行文件（PATH 优先，兼容 winget 安装路径）"""
+        from shutil import which
+        exe = which("ffmpeg")
+        if exe:
+            return exe
+        winget_dir = Path.home() / "AppData/Local/Microsoft/WinGet/Packages"
+        if winget_dir.exists():
+            matches = list(winget_dir.glob("Gyan.FFmpeg*/**/ffmpeg.exe"))
+            if matches:
+                return str(matches[0])
+        return "ffmpeg"
 
     async def generate_narration_audio(self):
         """阶段1: 生成解说词音频"""
@@ -193,7 +232,7 @@ class VideoStoryGenerator:
                     "denoise": 1,
                     "model": ["129", 0],
                     "scheduler": "simple",
-                    "steps": 20
+                    "steps": self.steps
                 }
             },
             "127": {
@@ -336,11 +375,7 @@ class VideoStoryGenerator:
             print(f"   提交工作流到: {self.comfyui_url}/prompt")
 
             try:
-                response = requests.post(
-                    f"{self.comfyui_url}/prompt",
-                    json=payload,
-                    timeout=30
-                )
+                response = self._request_json('POST', '/prompt', timeout=30, json_body=payload)
 
                 if response.status_code == 200:
                     prompt_id = response.json()['prompt_id']
@@ -358,6 +393,11 @@ class VideoStoryGenerator:
 
         print()
         print(f"✨ 已提交 {len(prompt_ids)} 个任务")
+
+        if len(prompt_ids) == 0:
+            raise RuntimeError(
+                f"所有视频任务提交失败，请检查 ComfyUI 地址: {self.comfyui_url}（可点击「测试连接」验证）"
+            )
 
         # 保存提交记录
         submission_file = self.output_dir / "submissions.json"
@@ -385,8 +425,8 @@ class VideoStoryGenerator:
                     continue
 
                 try:
-                        response = requests.get(
-                            f"{self.comfyui_url}/history/{item['prompt_id']}"
+                        response = self._request_json(
+                            'GET', f"/history/{item['prompt_id']}", timeout=30
                         )
 
                         if response.status_code == 200:
@@ -394,6 +434,15 @@ class VideoStoryGenerator:
 
                             if item['prompt_id'] in history:
                                 status = history[item['prompt_id']].get('status', {})
+                                if status.get('status_str') == 'error':
+                                    error_msgs = []
+                                    for m in status.get('messages', [])[-5:]:
+                                        if m[0] == 'execution_error':
+                                            error_msgs.append(str(m[1])[:300])
+                                    raise RuntimeError(
+                                        f"ComfyUI 场景 {item['scene_id']:02d} 生成失败: "
+                                        + ('; '.join(error_msgs) if error_msgs else '未知错误')
+                                    )
                                 if status.get('completed', False):
                                     completed.add(item['prompt_id'])
                                     print(f"✅ 场景 {item['scene_id']:02d} 完成")
@@ -490,7 +539,7 @@ class VideoStoryGenerator:
 
             try:
                 # 获取任务历史记录
-                response = requests.get(f"{self.comfyui_url}/history/{prompt_id}", timeout=10)
+                response = self._request_json('GET', f"/history/{prompt_id}", timeout=30)
                 if response.status_code != 200:
                     print(f"      ❌ 无法获取任务历史: HTTP {response.status_code}")
                     continue
@@ -504,8 +553,18 @@ class VideoStoryGenerator:
                 outputs = history[prompt_id].get('outputs', {})
 
                 for node_id, output in outputs.items():
-                    videos = output.get('videos', [])
-                    for video_info in videos:
+                    # 部分节点输出为 True/False 而非字典，跳过
+                    if not isinstance(output, dict):
+                        continue
+
+                    # SaveVideo 输出可能在不同键下（videos/animated/images），部分值为非字典
+                    video_lists = []
+                    for key in ('videos', 'animated', 'images'):
+                        items = output.get(key, [])
+                        if isinstance(items, list):
+                            video_lists.extend(it for it in items if isinstance(it, dict))
+
+                    for video_info in video_lists:
                         filename = video_info.get('filename')
                         subfolder = video_info.get('subfolder', '')
                         video_type = video_info.get('type', 'output')
@@ -518,27 +577,35 @@ class VideoStoryGenerator:
                                 'subfolder': subfolder
                             }
 
-                            # 下载视频
-                            try:
-                                download_response = requests.get(
-                                    f"{self.comfyui_url}/view",
-                                    params=params,
-                                    timeout=60,
-                                    stream=True
-                                )
+                            # 下载视频（隧道偶尔返回HTML页面，自动重试）
+                            download_response = None
+                            for attempt in range(1, 6):
+                                try:
+                                    r = requests.get(
+                                        f"{self.comfyui_url}/view",
+                                        params=params,
+                                        timeout=60,
+                                        stream=True
+                                    )
+                                    if r.status_code == 200 and not r.headers.get('content-type', '').startswith('text/html'):
+                                        download_response = r
+                                        break
+                                    r.close()
+                                    print(f"      ⚠️  第{attempt}次下载异常: HTTP {r.status_code}")
+                                except Exception as e:
+                                    print(f"      ⚠️  第{attempt}次下载失败: {e}")
+                                time.sleep(2 * attempt)
 
-                                if download_response.status_code == 200:
-                                    # 保存视频
-                                    dest_file = self.video_dir / filename
-                                    with open(dest_file, 'wb') as f:
-                                        for chunk in download_response.iter_content(chunk_size=8192):
-                                            f.write(chunk)
+                            if download_response is not None:
+                                # 保存视频
+                                dest_file = self.video_dir / filename
+                                with open(dest_file, 'wb') as f:
+                                    for chunk in download_response.iter_content(chunk_size=8192):
+                                        f.write(chunk)
 
-                                    print(f"      ✅ 已下载: {filename} ({dest_file.stat().st_size / 1024 / 1024:.2f} MB)")
-                                else:
-                                    print(f"      ❌ 下载失败: HTTP {download_response.status_code}")
-                            except Exception as e:
-                                print(f"      ❌ 下载失败: {e}")
+                                print(f"      ✅ 已下载: {filename} ({dest_file.stat().st_size / 1024 / 1024:.2f} MB)")
+                            else:
+                                print(f"      ❌ 下载失败（重试耗尽）: {filename}")
 
             except Exception as e:
                 print(f"      ❌ 处理失败: {e}")
@@ -580,8 +647,9 @@ class VideoStoryGenerator:
             print(f"   音频: {audio_file.name} ({audio_file.stat().st_size / 1024:.1f} KB)")
 
             # ffmpeg混合命令
+            ffmpeg = self._find_ffmpeg()
             cmd = [
-                "ffmpeg", "-y",
+                ffmpeg, "-y",
                 "-i", str(video_file),
                 "-i", str(audio_file),
                 "-filter_complex",
@@ -715,16 +783,17 @@ class VideoStoryGenerator:
 
         # 检查 ffmpeg 是否可用
         try:
-            result = subprocess.run(["ffmpeg", "-version"], capture_output=True, timeout=5)
+            ffmpeg = self._find_ffmpeg()
+            result = subprocess.run([ffmpeg, "-version"], capture_output=True, timeout=5)
             if result.returncode != 0:
                 print("❌ ffmpeg 不可用")
                 print("\n解决方案:")
-                print("  apt-get install ffmpeg")
+                print("  winget install --id Gyan.FFmpeg -e 或 apt-get install ffmpeg")
                 return None
         except FileNotFoundError:
             print("❌ ffmpeg 未安装")
             print("\n解决方案:")
-            print("  apt-get install ffmpeg")
+            print("  winget install --id Gyan.FFmpeg -e 或 apt-get install ffmpeg")
             return None
         except Exception as e:
             print(f"❌ ffmpeg 检查失败: {e}")
@@ -732,7 +801,7 @@ class VideoStoryGenerator:
 
         # ffmpeg合成命令
         cmd = [
-            "ffmpeg", "-y",
+            ffmpeg, "-y",
             "-f", "concat", "-safe", "0",
             "-i", str(scenes_file),
             "-c", "copy",
