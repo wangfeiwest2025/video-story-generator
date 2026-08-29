@@ -551,6 +551,9 @@ class VideoStoryGenerator:
         with open(timing_file, 'r') as f:
             timing = json.load(f)
 
+        success_count = 0
+        fail_count = 0
+
         for scene_info in timing['scenes']:
             scene_id = scene_info['scene_id']
 
@@ -558,6 +561,8 @@ class VideoStoryGenerator:
             video_files = list(self.video_dir.glob(f"scene_{scene_id:02d}_*.mp4"))
             if not video_files:
                 print(f"⚠️ 场景 {scene_id:02d} 的视频文件未找到")
+                print(f"   搜索路径: {self.video_dir / f'scene_{scene_id:02d}_*.mp4'}")
+                fail_count += 1
                 continue
 
             video_file = video_files[0]
@@ -565,6 +570,8 @@ class VideoStoryGenerator:
             output_file = self.final_dir / f"scene_{scene_id:02d}_mixed.mp4"
 
             print(f"混合场景 {scene_id:02d}...")
+            print(f"   视频: {video_file.name} ({video_file.stat().st_size / 1024 / 1024:.2f} MB)")
+            print(f"   音频: {audio_file.name} ({audio_file.stat().st_size / 1024:.1f} KB)")
 
             # ffmpeg混合命令
             cmd = [
@@ -581,12 +588,18 @@ class VideoStoryGenerator:
             result = subprocess.run(cmd, capture_output=True, text=True)
 
             if result.returncode == 0:
-                print(f"   ✅ 完成: {output_file.name}")
+                print(f"   ✅ 完成: {output_file.name} ({output_file.stat().st_size / 1024 / 1024:.2f} MB)")
+                success_count += 1
             else:
-                print(f"   ❌ 失败: {result.stderr[:100]}")
+                print(f"   ❌ 失败")
+                print(f"   错误: {result.stderr[:200]}")
+                fail_count += 1
 
         print()
-        print("✨ 音频混合完成！")
+        print(f"✨ 音频混合完成！")
+        print(f"   成功: {success_count} 个场景")
+        if fail_count > 0:
+            print(f"   失败: {fail_count} 个场景")
 
     def compose_final_video(self):
         """阶段4: 合成最终视频"""
@@ -596,20 +609,62 @@ class VideoStoryGenerator:
         print("=" * 80)
         print()
 
+        # 检查是否有混合后的视频文件
+        mixed_videos = list(self.final_dir.glob("*_mixed.mp4"))
+        print(f"找到 {len(mixed_videos)} 个混合视频文件")
+
+        if not mixed_videos:
+            print("❌ 没有找到混合后的视频文件")
+            print("   可能的原因:")
+            print("   1. 音频混合失败")
+            print("   2. 视频下载失败")
+            print("   3. 视频文件未正确复制到 final 目录")
+            return None
+
         # 创建场景列表文件
         scenes_file = self.final_dir / "scenes_list.txt"
 
+        print(f"创建场景列表文件...")
+        scene_count = 0
         with open(scenes_file, 'w') as f:
             for scene in self.scenes:
                 scene_file = self.final_dir / f"scene_{scene['id']:02d}_mixed.mp4"
                 if scene_file.exists():
-                    f.write(f"file '{scene_file}'\n")
+                    # 使用相对路径或绝对路径
+                    f.write(f"file '{scene_file.absolute()}'\n")
+                    scene_count += 1
+                    print(f"   ✅ 场景 {scene['id']:02d}: {scene_file.name}")
 
-        # 最终视频文件名
+        print(f"场景列表文件已创建，包含 {scene_count} 个场景")
+
+        if scene_count == 0:
+            print("❌ 场景列表文件为空，无法合成")
+            return None
+
+        # 最终视频文件名 - 移除特殊字符
         title = self.script['title']
-        final_video = self.final_dir / f"{title}_final.mp4"
+        # 清理文件名，移除可能导致问题的字符
+        safe_title = "".join(c for c in title if c.isalnum() or c in (' ', '-', '_')).strip()
+        if not safe_title:
+            safe_title = "video"
+
+        final_video = self.final_dir / f"{safe_title}_final.mp4"
 
         print(f"合成最终视频: {final_video.name}...")
+
+        # 检查 ffmpeg 是否可用
+        try:
+            result = subprocess.run(["ffmpeg", "-version"], capture_output=True, timeout=5)
+            if result.returncode != 0:
+                print("❌ ffmpeg 不可用")
+                return None
+        except FileNotFoundError:
+            print("❌ ffmpeg 未安装")
+            print("   请安装: apt-get install ffmpeg")
+            return None
+        except Exception as e:
+            print(f"❌ ffmpeg 检查失败: {e}")
+            return None
 
         # ffmpeg合成命令
         cmd = [
@@ -619,6 +674,8 @@ class VideoStoryGenerator:
             "-c", "copy",
             str(final_video)
         ]
+
+        print(f"执行命令: {' '.join(cmd)}")
 
         result = subprocess.run(cmd, capture_output=True, text=True)
 
@@ -630,20 +687,33 @@ class VideoStoryGenerator:
             print()
             print(f"📹 最终视频: {final_video}")
             print(f"📊 标题: {title}")
-            print(f"📊 场景数: {len(self.scenes)}")
+            print(f"📊 场景数: {scene_count}")
 
             timing_file = self.audio_dir / "scene_timing.json"
             with open(timing_file, 'r') as f:
                 timing = json.load(f)
 
             print(f"📊 时长: {timing['total_duration_minutes']:.2f} 分钟")
+            print(f"📊 文件大小: {final_video.stat().st_size / 1024 / 1024:.2f} MB")
             print()
             print("✨ 享受您的AI生成短片！")
             print("=" * 80)
 
             return final_video
         else:
-            print(f"❌ 合成失败: {result.stderr[:200]}")
+            print(f"❌ 合成失败")
+            print(f"错误输出: {result.stderr[:500]}")
+
+            # 尝试诊断问题
+            if "No such file or directory" in result.stderr:
+                print("\n💡 诊断: 文件路径问题")
+                print("   检查场景列表文件内容:")
+                with open(scenes_file, 'r') as f:
+                    print(f.read())
+            elif "Invalid data found when processing input" in result.stderr:
+                print("\n💡 诊断: 输入文件格式问题")
+                print("   可能是视频文件损坏或格式不支持")
+
             return None
 
     async def run_full_pipeline(self):
