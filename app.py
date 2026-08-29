@@ -285,45 +285,76 @@ with tab2:
 
                             # 运行完整流程
                             set_status("running", "生成音频...")
-                            asyncio.run(gen.generate_narration_audio())
+                            try:
+                                asyncio.run(gen.generate_narration_audio())
+                                set_status("running", "音频生成完成")
+                            except Exception as e:
+                                set_status("error", "", f"音频生成失败: {str(e)}")
+                                return
 
                             # 检查模型
                             set_status("running", "检查 MiniMax H3 模型...")
-                            gen.check_minimax_models()
+                            try:
+                                models_ok = gen.check_minimax_models()
+                                if not models_ok:
+                                    set_status("running", "警告: 部分模型未找到，但将继续尝试")
+                            except Exception as e:
+                                set_status("running", f"模型检查出错: {str(e)}，但将继续")
 
                             # 获取音频时长
                             set_status("running", "计算音频时长...")
-                            scene_timing = gen.get_audio_durations()
-
-                            # 提交视频生成任务
-                            set_status("running", "提交视频生成任务到 ComfyUI...")
-                            prompt_ids = gen.submit_all_videos(scene_timing)
-
-                            if not prompt_ids:
-                                set_status("error", "", "未能提交任何视频生成任务，请检查 ComfyUI 连接")
+                            try:
+                                scene_timing = gen.get_audio_durations()
+                                set_status("running", f"音频时长计算完成，共 {len(scene_timing)} 个场景")
+                            except Exception as e:
+                                set_status("error", "", f"音频时长计算失败: {str(e)}")
                                 return
 
-                            set_status("running", f"已提交 {len(prompt_ids)} 个任务到 ComfyUI，等待完成...")
+                            # 提交视频生成任务
+                            set_status("running", f"提交视频生成任务到 ComfyUI ({comfyui_url})...")
+                            try:
+                                prompt_ids = gen.submit_all_videos(scene_timing)
+
+                                if not prompt_ids:
+                                    set_status("error", "", f"未能提交任何视频生成任务。请检查: 1) ComfyUI 是否运行在 {comfyui_url} 2) 网络是否连通 3) 查看控制台日志获取详细错误")
+                                    return
+
+                                set_status("running", f"✅ 已提交 {len(prompt_ids)} 个任务到 ComfyUI")
+                            except Exception as e:
+                                set_status("error", "", f"提交任务失败: {str(e)}。请检查 ComfyUI 是否正常运行在 {comfyui_url}")
+                                return
 
                             # 等待完成
-                            gen.wait_for_completion(prompt_ids, check_interval=60)
+                            set_status("running", "等待视频生成完成...")
+                            try:
+                                gen.wait_for_completion(prompt_ids, check_interval=60)
+                            except Exception as e:
+                                set_status("error", "", f"等待视频生成失败: {str(e)}")
+                                return
 
                             # 混合音频
                             set_status("running", "混合音频...")
-                            gen.mix_audio()
+                            try:
+                                gen.mix_audio()
+                            except Exception as e:
+                                set_status("error", "", f"音频混合失败: {str(e)}")
+                                return
 
                             # 合成最终视频
                             set_status("running", "合成最终视频...")
-                            final_video = gen.compose_final_video()
+                            try:
+                                final_video = gen.compose_final_video()
 
-                            if final_video:
-                                set_status("completed", f"视频已生成到: {output_dir}")
-                            else:
-                                set_status("error", "", "视频合成失败")
+                                if final_video:
+                                    set_status("completed", f"视频已生成到: {output_dir}")
+                                else:
+                                    set_status("error", "", "视频合成失败")
+                            except Exception as e:
+                                set_status("error", "", f"视频合成失败: {str(e)}")
 
                         except Exception as e:
                             import traceback
-                            error_msg = f"{str(e)}\n{traceback.format_exc()}"
+                            error_msg = f"未预期的错误: {str(e)}\n{traceback.format_exc()}"
                             set_status("error", "", error_msg)
 
                     # 启动线程

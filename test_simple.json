@@ -1,0 +1,13 @@
+{
+  "title": "测试视频",
+  "style": "电影级",
+  "voice": "zh-CN-XiaoxiaoNeural",
+  "scenes": [
+    {
+      "id": 1,
+      "narration": "这是一个简单的测试场景，用于验证视频生成流程。",
+      "visual_prompt": "A beautiful sunset over the ocean, golden light reflecting on calm waters, cinematic shot",
+      "audio": "gentle ocean waves, ambient music"
+    }
+  ]
+}
