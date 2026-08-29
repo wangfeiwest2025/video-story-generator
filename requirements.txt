@@ -15,5 +15,9 @@ requests>=2.31.0
 # 图像处理
 Pillow>=10.0.0
 
-# 注意：ffmpeg 需要通过系统包管理器安装
-# 在 Dockerfile 或部署脚本中使用: apt-get install ffmpeg
+# ffmpeg 二进制备份方案（pip 自带静态 ffmpeg，云端容器无 apt 时可用）
+imageio-ffmpeg>=0.5.1
+
+# 注意：ffmpeg 优先通过系统包管理器安装
+# Streamlit Cloud: 仓库根目录 packages.txt 写入 ffmpeg（自动 apt 安装）
+# 本地 Windows: winget install --id Gyan.FFmpeg -e

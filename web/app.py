@@ -290,6 +290,13 @@ with tab2:
                                 ambient_volume=ambient_volume
                             )
 
+                            # 预检 ffmpeg（避免视频生成完成后才在混音阶段失败）
+                            try:
+                                gen._find_ffmpeg()
+                            except RuntimeError as fe:
+                                set_status("error", "", str(fe))
+                                return
+
                             set_status("running", "生成音频...")
                             asyncio.run(gen.generate_narration_audio())
 

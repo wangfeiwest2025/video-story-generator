@@ -115,7 +115,7 @@ class VideoStoryGenerator:
         raise RuntimeError(f"ComfyUI API 请求失败({method} {path}): {last_error}")
 
     def _find_ffmpeg(self):
-        """定位 ffmpeg 可执行文件（PATH 优先，兼容 winget 安装路径）"""
+        """定位 ffmpeg 可执行文件（PATH 优先，兼容 winget 与 imageio-ffmpeg 自带二进制）"""
         from shutil import which
         exe = which("ffmpeg")
         if exe:
@@ -125,7 +125,18 @@ class VideoStoryGenerator:
             matches = list(winget_dir.glob("Gyan.FFmpeg*/**/ffmpeg.exe"))
             if matches:
                 return str(matches[0])
-        return "ffmpeg"
+        try:
+            import imageio_ffmpeg
+            return imageio_ffmpeg.get_ffmpeg_exe()
+        except Exception:
+            pass
+        raise RuntimeError(
+            "未找到 ffmpeg，无法混合音频/合成视频。\n"
+            "解决方案（任选其一）：\n"
+            "  1. 系统安装：Linux 执行 apt-get install ffmpeg；Windows 执行 winget install --id Gyan.FFmpeg -e\n"
+            "  2. Streamlit Cloud：仓库根目录添加 packages.txt，内容为 ffmpeg\n"
+            "  3. 执行 pip install imageio-ffmpeg（自带静态 ffmpeg 二进制）"
+        )
 
     async def generate_narration_audio(self):
         """阶段1: 生成解说词音频"""
