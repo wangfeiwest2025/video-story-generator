@@ -87,7 +87,7 @@ with st.sidebar:
     # ComfyUI设置
     st.markdown("### 🔌 ComfyUI设置")
 
-    st.info("💡 **重要提示**: 如果 ComfyUI 部署在外部服务器，请填写外部服务器的地址")
+    st.info("💡 **重要**: 如果 ComfyUI 在外部服务器，请将输出目录留空（自动通过 API 下载视频）")
 
     comfyui_url = st.text_input(
         "ComfyUI地址",
@@ -99,11 +99,18 @@ with st.sidebar:
     )
 
     comfyui_output_dir = st.text_input(
-        "ComfyUI输出目录（可选）",
+        "ComfyUI输出目录（可选，远程服务器请留空）",
         value="",
-        help="ComfyUI 的 output 目录路径（仅当 ComfyUI 和创空间在同一环境时需要）\n"
-             "- 如果 ComfyUI 在外部服务器，请留空（将自动通过 API 下载视频）\n"
-             "- 如果在同一环境，填写 ComfyUI 的输出目录路径"
+        placeholder="留空则自动通过 API 下载视频",
+        help="**仅当 ComfyUI 和创空间在同一环境时填写**\n\n"
+             "✅ 填写情况:\n"
+             "- ComfyUI 和创空间在同一容器\n"
+             "- 路径如: /workspace/output\n\n"
+             "❌ 留空情况（推荐）:\n"
+             "- ComfyUI 在外部 GPU 服务器\n"
+             "- ComfyUI 在 CNB 节点\n"
+             "- 不确定路径时\n\n"
+             "系统会自动通过 API 下载视频"
     )
 
     # 测试连接
