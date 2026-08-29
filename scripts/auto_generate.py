@@ -143,11 +143,11 @@ class VideoStoryGenerator:
             },
             "123": {
                 "class_type": "VAEDecodeAudio",
-                "inputs": {"samples": ["140", 0], "vae": ["122", 0]}
+                "inputs": {"samples": ["127", 0], "vae": ["122", 0]}
             },
             "124": {
                 "class_type": "VAEDecode",
-                "inputs": {"samples": ["139", 0], "vae": ["121", 0]}
+                "inputs": {"samples": ["127", 0], "vae": ["121", 0]}
             },
             "125": {
                 "class_type": "KSamplerSelect",
@@ -217,14 +217,6 @@ class VideoStoryGenerator:
                     "length": timing['length'],
                     "prompt": f"{scene['visual_prompt']}, {scene['audio']}"
                 }
-            },
-            "139": {
-                "class_type": "easy cleanGpuUsed",
-                "inputs": {"anything": ["127", 0]}
-            },
-            "140": {
-                "class_type": "easy cleanGpuUsed",
-                "inputs": {"anything": ["127", 0]}
             },
             "92": {
                 "class_type": "SaveVideo",
