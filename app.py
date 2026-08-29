@@ -91,6 +91,12 @@ with st.sidebar:
         value="http://127.0.0.1:8188"
     )
 
+    comfyui_output_dir = st.text_input(
+        "ComfyUI输出目录",
+        value="/workspace/output",
+        help="ComfyUI 生成的视频保存路径（通常在 ComfyUI 的 output 目录）"
+    )
+
     # 测试连接
     if st.button("🔌 测试连接", use_container_width=True):
         try:
@@ -254,8 +260,9 @@ with tab2:
                     with open(temp_script, 'w', encoding='utf-8') as f:
                         json.dump(st.session_state.script, f, ensure_ascii=False, indent=2)
 
-                    # 创建输出目录
-                    output_dir = Path("/workspace/output") / datetime.now().strftime("%Y%m%d_%H%M%S")
+                    # 创建输出目录 - 使用项目目录内的相对路径
+                    project_root = Path(__file__).parent
+                    output_dir = project_root / "output" / datetime.now().strftime("%Y%m%d_%H%M%S")
                     output_dir.mkdir(parents=True, exist_ok=True)
 
                     # 后台生成函数
@@ -267,6 +274,7 @@ with tab2:
                                 script_file=str(temp_script),
                                 output_dir=str(output_dir),
                                 comfyui_url=comfyui_url,
+                                comfyui_output_dir=comfyui_output_dir,
                                 voice=voice,
                                 width=width,
                                 height=height,
@@ -364,8 +372,9 @@ with tab3:
 with tab4:
     st.markdown('<h2 class="sub-header">🎥 结果预览</h2>', unsafe_allow_html=True)
 
-    # 1. 检查项目输出目录（主要）
-    output_base = Path("/workspace/output")
+    # 1. 检查项目输出目录（主要）- 使用项目目录内的相对路径
+    project_root = Path(__file__).parent
+    output_base = project_root / "output"
     if output_base.exists():
         # 找到所有项目目录
         output_dirs = sorted([d for d in output_base.iterdir() if d.is_dir() and d.name.startswith("202")],
@@ -438,6 +447,46 @@ with tab4:
                                 st.audio(str(audio))
 
                     st.markdown("---")
+
+    # 2. 检查 ComfyUI 输出目录
+    if comfyui_output_dir:
+        comfyui_output = Path(comfyui_output_dir)
+        if comfyui_output.exists():
+            # 查找视频文件
+            all_videos = list(comfyui_output.rglob("*.mp4"))
+            if all_videos:
+                st.markdown("### 📂 ComfyUI 原始输出")
+                st.caption(f"找到 {len(all_videos)} 个视频文件（仅环境音）")
+
+                # 显示最新的视频
+                for video in sorted(all_videos, key=lambda x: x.stat().st_mtime, reverse=True)[:5]:
+                    size_mb = video.stat().st_size / 1024 / 1024
+                    mtime = datetime.fromtimestamp(video.stat().st_mtime).strftime("%m/%d %H:%M")
+
+                    with st.expander(f"{video.name} ({size_mb:.2f} MB) - {mtime}"):
+                        st.info("ℹ️ 原始生成的视频（仅含环境音，无解说词）")
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            st.video(str(video))
+                        with col2:
+                            with open(video, 'rb') as f:
+                                st.download_button(
+                                    f"📥 下载原始视频",
+                                    f,
+                                    file_name=video.name,
+                                    mime="video/mp4",
+                                    key=f"dl_comfyui_{video.name}"
+                                )
+
+    # 3. 显示帮助信息
+    if not output_base.exists() and not (comfyui_output_dir and Path(comfyui_output_dir).exists()):
+        st.info("ℹ️ 暂无输出文件")
+        st.markdown("""
+        **提示**：
+        - 生成的视频保存在项目的 output 目录
+        - 原始视频（仅环境音）在 ComfyUI 输出目录
+        - 视频生成需要 5-10 分钟，请耐心等待
+        """)
 
 # 页脚
 st.markdown("---")
