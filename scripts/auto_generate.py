@@ -402,12 +402,27 @@ class VideoStoryGenerator:
         print("📋 复制视频文件到项目目录...")
         comfyui_output = Path(self.comfyui_output_dir)
 
+        print(f"   ComfyUI 输出目录: {comfyui_output}")
+        print(f"   目录存在: {comfyui_output.exists()}")
+
+        if not comfyui_output.exists():
+            print(f"   ❌ ComfyUI 输出目录不存在！")
+            print(f"   请检查 comfyui_output_dir 参数是否正确")
+            return
+
+        # 列出 ComfyUI 输出目录中的所有视频
+        all_videos = list(comfyui_output.rglob("*.mp4"))
+        print(f"   找到 {len(all_videos)} 个视频文件")
+
         for item in prompt_ids:
             scene_id = item['scene_id']
 
             # 在 ComfyUI 输出目录查找视频
             video_pattern = f"scene_{scene_id:02d}_*.mp4"
+            print(f"   搜索模式: {video_pattern}")
+
             videos = list(comfyui_output.rglob(video_pattern))
+            print(f"   找到 {len(videos)} 个匹配文件")
 
             if videos:
                 # 找到最新的视频
@@ -415,10 +430,21 @@ class VideoStoryGenerator:
 
                 # 复制到项目目录
                 dest_file = self.video_dir / latest_video.name
-                shutil.copy(str(latest_video), str(dest_file))
-                print(f"   ✅ 场景 {scene_id:02d}: {latest_video.name}")
+                try:
+                    shutil.copy(str(latest_video), str(dest_file))
+                    print(f"   ✅ 场景 {scene_id:02d}: {latest_video.name}")
+                    print(f"      从: {latest_video}")
+                    print(f"      到: {dest_file}")
+                except Exception as e:
+                    print(f"   ❌ 复制失败: {e}")
             else:
                 print(f"   ⚠️  场景 {scene_id:02d}: 未找到视频文件")
+                # 尝试其他搜索方式
+                all_scene_videos = [v for v in all_videos if f"scene_{scene_id:02d}" in str(v) or f"_{scene_id:02d}_" in str(v)]
+                if all_scene_videos:
+                    print(f"   💡 可能的视频文件:")
+                    for v in all_scene_videos[:3]:
+                        print(f"      - {v.name}")
 
         print()
 

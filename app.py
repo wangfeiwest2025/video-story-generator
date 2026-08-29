@@ -372,28 +372,43 @@ with tab3:
 with tab4:
     st.markdown('<h2 class="sub-header">🎥 结果预览</h2>', unsafe_allow_html=True)
 
-    # 1. 检查项目输出目录（主要）- 使用项目目录内的相对路径
+    # 使用项目目录内的相对路径
     project_root = Path(__file__).parent
     output_base = project_root / "output"
+
+    st.info(f"📁 输出目录: `{output_base}`")
+
     if output_base.exists():
         # 找到所有项目目录
         output_dirs = sorted([d for d in output_base.iterdir() if d.is_dir() and d.name.startswith("202")],
                             reverse=True)
 
         if output_dirs:
+            st.write(f"找到 {len(output_dirs)} 个生成项目")
+
             # 检查最新的完整项目
-            for project_dir in output_dirs[:3]:  # 检查最新的3个项目
+            for project_dir in output_dirs[:5]:  # 检查最新的5个项目
                 final_dir = project_dir / "final"
                 video_dir = project_dir / "video"
                 audio_dir = project_dir / "audio"
 
-                # 检查是否有最终视频
-                final_videos = list(final_dir.glob("*_final.mp4")) if final_dir.exists() else []
+                # 检查是否有文件
+                final_videos = list(final_dir.glob("*.mp4")) if final_dir.exists() else []
                 mixed_videos = list(final_dir.glob("*_mixed.mp4")) if final_dir.exists() else []
                 scene_videos = list(video_dir.glob("*.mp4")) if video_dir.exists() else []
+                audio_files = list(audio_dir.glob("*.mp3")) if audio_dir.exists() else []
 
-                if final_videos or mixed_videos or scene_videos:
+                if final_videos or mixed_videos or scene_videos or audio_files:
                     st.markdown(f"### 📁 项目: {project_dir.name}")
+
+                    # 显示文件统计
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.metric("最终视频", len(final_videos))
+                    with col2:
+                        st.metric("场景视频", len(scene_videos))
+                    with col3:
+                        st.metric("音频文件", len(audio_files))
 
                     # 显示最终视频
                     if final_videos:
@@ -409,14 +424,17 @@ with tab4:
                                 with col1:
                                     st.video(str(video))
                                 with col2:
-                                    with open(video, 'rb') as f:
-                                        st.download_button(
-                                            f"📥 下载最终视频",
-                                            f,
-                                            file_name=video.name,
-                                            mime="video/mp4",
-                                            key=f"download_{project_dir.name}_{video.name}"
-                                        )
+                                    try:
+                                        with open(video, 'rb') as f:
+                                            st.download_button(
+                                                f"📥 下载最终视频",
+                                                f,
+                                                file_name=video.name,
+                                                mime="video/mp4",
+                                                key=f"download_{project_dir.name}_{video.name}"
+                                            )
+                                    except Exception as e:
+                                        st.error(f"下载失败: {e}")
 
                     # 显示混合视频（含解说词）
                     if mixed_videos:
@@ -428,35 +446,52 @@ with tab4:
                             with col1:
                                 st.write(f"**{video.name}** ({size_mb:.2f} MB)")
                             with col2:
-                                with open(video, 'rb') as f:
-                                    st.download_button(
-                                        "📥",
-                                        f,
-                                        file_name=video.name,
-                                        mime="video/mp4",
-                                        key=f"dl_{project_dir.name}_{video.name}"
-                                    )
+                                try:
+                                    with open(video, 'rb') as f:
+                                        st.download_button(
+                                            "📥",
+                                            f,
+                                            file_name=video.name,
+                                            mime="video/mp4",
+                                            key=f"dl_{project_dir.name}_{video.name}"
+                                        )
+                                except Exception as e:
+                                    st.error(f"下载失败: {e}")
+
+                    # 显示原始视频
+                    if scene_videos:
+                        with st.expander(f"📹 原始场景视频 ({len(scene_videos)} 个)"):
+                            st.info("这些是从 ComfyUI 生成的原始视频（仅含环境音）")
+                            for video in sorted(scene_videos):
+                                size_mb = video.stat().st_size / 1024 / 1024
+                                st.write(f"- **{video.name}** ({size_mb:.2f} MB)")
 
                     # 显示解说词音频
-                    audio_files = list(audio_dir.glob("*.mp3")) if audio_dir.exists() else []
                     if audio_files:
                         with st.expander(f"🎙️ 解说词音频 ({len(audio_files)} 个)"):
-                            for audio in audio_files[:3]:
+                            for audio in sorted(audio_files):
                                 size_kb = audio.stat().st_size / 1024
                                 st.write(f"- {audio.name} ({size_kb:.1f} KB)")
                                 st.audio(str(audio))
 
                     st.markdown("---")
+        else:
+            st.warning("没有找到生成项目")
+    else:
+        st.warning("输出目录不存在，请先生成视频")
 
-    # 2. 检查 ComfyUI 输出目录
+    # 显示 ComfyUI 原始输出
     if comfyui_output_dir:
+        st.markdown("### 📂 ComfyUI 原始输出")
         comfyui_output = Path(comfyui_output_dir)
+
+        st.info(f"ComfyUI 输出目录: `{comfyui_output}`")
+
         if comfyui_output.exists():
             # 查找视频文件
             all_videos = list(comfyui_output.rglob("*.mp4"))
             if all_videos:
-                st.markdown("### 📂 ComfyUI 原始输出")
-                st.caption(f"找到 {len(all_videos)} 个视频文件（仅环境音）")
+                st.write(f"找到 {len(all_videos)} 个视频文件")
 
                 # 显示最新的视频
                 for video in sorted(all_videos, key=lambda x: x.stat().st_mtime, reverse=True)[:5]:
@@ -469,24 +504,26 @@ with tab4:
                         with col1:
                             st.video(str(video))
                         with col2:
-                            with open(video, 'rb') as f:
-                                st.download_button(
-                                    f"📥 下载原始视频",
-                                    f,
-                                    file_name=video.name,
-                                    mime="video/mp4",
-                                    key=f"dl_comfyui_{video.name}"
-                                )
-
-    # 3. 显示帮助信息
-    if not output_base.exists() and not (comfyui_output_dir and Path(comfyui_output_dir).exists()):
-        st.info("ℹ️ 暂无输出文件")
-        st.markdown("""
-        **提示**：
-        - 生成的视频保存在项目的 output 目录
-        - 原始视频（仅环境音）在 ComfyUI 输出目录
-        - 视频生成需要 5-10 分钟，请耐心等待
-        """)
+                            try:
+                                with open(video, 'rb') as f:
+                                    st.download_button(
+                                        f"📥 下载原始视频",
+                                        f,
+                                        file_name=video.name,
+                                        mime="video/mp4",
+                                        key=f"dl_comfyui_{video.name}"
+                                    )
+                            except Exception as e:
+                                st.error(f"下载失败: {e}")
+            else:
+                st.info("ComfyUI 输出目录中没有找到视频文件")
+        else:
+            st.warning(f"ComfyUI 输出目录不存在: {comfyui_output}")
+            st.markdown("""
+            **提示**:
+            - 如果使用外部 ComfyUI，请确保输出目录路径正确
+            - 如果 ComfyUI 在同一环境中，默认路径通常是 `/workspace/output`
+            """)
 
 # 页脚
 st.markdown("---")
