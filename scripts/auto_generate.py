@@ -619,8 +619,54 @@ class VideoStoryGenerator:
             print("   1. 音频混合失败")
             print("   2. 视频下载失败")
             print("   3. 视频文件未正确复制到 final 目录")
+
+            # 检查是否有原始视频
+            print("\n检查原始视频文件...")
+            raw_videos = list(self.video_dir.glob("*.mp4"))
+            if raw_videos:
+                print(f"找到 {len(raw_videos)} 个原始视频文件")
+                print("建议: 使用原始视频文件（仅环境音）")
+                for v in raw_videos[:3]:
+                    print(f"  - {v.name}")
             return None
 
+        # 如果只有一个场景，直接返回混合视频
+        if len(mixed_videos) == 1:
+            print("ℹ️  只有一个场景，无需合成")
+            mixed_video = mixed_videos[0]
+
+            # 重命名为最终视频
+            title = self.script['title']
+            safe_title = "".join(c for c in title if c.isalnum() or c in (' ', '-', '_')).strip()
+            if not safe_title:
+                safe_title = "video"
+
+            final_video = self.final_dir / f"{safe_title}_final.mp4"
+
+            try:
+                shutil.copy(str(mixed_video), str(final_video))
+                print(f"✅ 已创建最终视频: {final_video.name}")
+                print(f"   文件大小: {final_video.stat().st_size / 1024 / 1024:.2f} MB")
+
+                # 显示完成信息
+                print()
+                print("=" * 80)
+                print("🎉 全流程完成！")
+                print("=" * 80)
+                print()
+                print(f"📹 最终视频: {final_video}")
+                print(f"📊 标题: {title}")
+                print(f"📊 场景数: 1")
+                print()
+                print("✨ 享受您的AI生成短片！")
+                print("=" * 80)
+
+                return final_video
+            except Exception as e:
+                print(f"❌ 复制失败: {e}")
+                return None
+
+        # 多个场景需要合成
         # 创建场景列表文件
         scenes_file = self.final_dir / "scenes_list.txt"
 
@@ -657,10 +703,13 @@ class VideoStoryGenerator:
             result = subprocess.run(["ffmpeg", "-version"], capture_output=True, timeout=5)
             if result.returncode != 0:
                 print("❌ ffmpeg 不可用")
+                print("\n解决方案:")
+                print("  apt-get install ffmpeg")
                 return None
         except FileNotFoundError:
             print("❌ ffmpeg 未安装")
-            print("   请安装: apt-get install ffmpeg")
+            print("\n解决方案:")
+            print("  apt-get install ffmpeg")
             return None
         except Exception as e:
             print(f"❌ ffmpeg 检查失败: {e}")
@@ -713,6 +762,12 @@ class VideoStoryGenerator:
             elif "Invalid data found when processing input" in result.stderr:
                 print("\n💡 诊断: 输入文件格式问题")
                 print("   可能是视频文件损坏或格式不支持")
+
+            # 回退方案：使用第一个混合视频
+            print("\n💡 回退方案:")
+            print("   由于合成失败，您可以直接使用混合视频文件")
+            print(f"   文件位置: {mixed_videos[0]}")
+            print("   这些文件包含完整的解说词和环境音")
 
             return None
 
