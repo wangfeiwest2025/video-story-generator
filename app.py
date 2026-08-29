@@ -86,26 +86,57 @@ with st.sidebar:
 
     # ComfyUI设置
     st.markdown("### 🔌 ComfyUI设置")
+
+    st.info("💡 **重要提示**: 如果 ComfyUI 部署在外部服务器，请填写外部服务器的地址")
+
     comfyui_url = st.text_input(
         "ComfyUI地址",
-        value="http://127.0.0.1:8188"
+        value="http://127.0.0.1:8188",
+        help="ComfyUI 服务器地址\n"
+             "- 本地: http://127.0.0.1:8188\n"
+             "- 外部服务器: https://your-server.com\n"
+             "- CNB GPU节点: https://xxx-8188.cnb.run/"
     )
 
     comfyui_output_dir = st.text_input(
-        "ComfyUI输出目录",
-        value="/workspace/output",
-        help="ComfyUI 生成的视频保存路径（通常在 ComfyUI 的 output 目录）"
+        "ComfyUI输出目录（可选）",
+        value="",
+        help="ComfyUI 的 output 目录路径（仅当 ComfyUI 和创空间在同一环境时需要）\n"
+             "- 如果 ComfyUI 在外部服务器，请留空（将自动通过 API 下载视频）\n"
+             "- 如果在同一环境，填写 ComfyUI 的输出目录路径"
     )
 
     # 测试连接
     if st.button("🔌 测试连接", use_container_width=True):
         try:
             import requests
-            response = requests.get(f"{comfyui_url}/system_stats", timeout=5)
+            response = requests.get(f"{comfyui_url}/system_stats", timeout=10)
             if response.status_code == 200:
                 st.success("✅ ComfyUI连接成功！")
+
+                # 显示系统信息
+                try:
+                    data = response.json()
+                    st.info(f"ComfyUI 版本: {data.get('system', {}).get('comfyui_version', 'unknown')}")
+                except:
+                    pass
             else:
                 st.error(f"❌ 连接失败: HTTP {response.status_code}")
+        except requests.exceptions.Timeout:
+            st.error("❌ 连接超时，请检查地址是否正确")
+        except requests.exceptions.ConnectionError:
+            st.error(f"❌ 无法连接到 {comfyui_url}")
+            st.markdown("""
+            **可能的原因**:
+            - ComfyUI 未启动
+            - 地址错误
+            - 网络不通或防火墙阻止
+
+            **解决方案**:
+            - 确认 ComfyUI 正在运行
+            - 检查地址和端口是否正确
+            - 如果 ComfyUI 在外部，确保网络可访问
+            """)
         except Exception as e:
             st.error(f"❌ 连接失败: {str(e)}")
 

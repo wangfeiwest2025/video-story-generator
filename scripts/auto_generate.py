@@ -70,18 +70,15 @@ class VideoStoryGenerator:
         # ComfyUI 输出目录 - 优先使用参数，否则尝试自动检测
         self.comfyui_output_dir = comfyui_output_dir
         if not self.comfyui_output_dir:
-            try:
-                # 尝试通过 API 获取输出目录
-                response = requests.get(f"{self.comfyui_url}/object_info", timeout=5)
-                if response.status_code == 200:
-                    # 假设输出目录在 ComfyUI 工作目录下的 output 文件夹
-                    # 如果无法获取，使用默认路径
-                    self.comfyui_output_dir = "/workspace/output"
-                    print(f"📁 ComfyUI输出目录: {self.comfyui_output_dir} (默认)")
-            except:
-                # 如果无法连接，使用默认路径
-                self.comfyui_output_dir = "/workspace/output"
-                print(f"📁 ComfyUI输出目录: {self.comfyui_output_dir} (默认)")
+            # 如果没有指定，检查是否可以访问默认路径
+            default_path = "/workspace/output"
+            if Path(default_path).exists():
+                self.comfyui_output_dir = default_path
+                print(f"📁 ComfyUI输出目录: {self.comfyui_output_dir} (自动检测)")
+            else:
+                self.comfyui_output_dir = None
+                print(f"📁 ComfyUI输出目录: 未指定（将通过 API 下载视频）")
+                print(f"   💡 这通常发生在 ComfyUI 部署在远程服务器时")
         else:
             print(f"📁 ComfyUI输出目录: {self.comfyui_output_dir} (自定义)")
 
@@ -406,18 +403,29 @@ class VideoStoryGenerator:
         print(f"✨ 所有视频生成完成！耗时: {elapsed/60:.1f} 分钟")
         print()
 
-        # 复制视频文件到项目输出目录
-        print("📋 复制视频文件到项目目录...")
+        # 获取视频文件到项目输出目录
+        print("📋 获取视频文件到项目目录...")
+        self.retrieve_videos_from_comfyui(prompt_ids)
+
+    def retrieve_videos_from_comfyui(self, prompt_ids):
+        """从 ComfyUI 获取视频文件（支持文件系统复制和 API 下载）"""
         comfyui_output = Path(self.comfyui_output_dir)
 
         print(f"   ComfyUI 输出目录: {comfyui_output}")
         print(f"   目录存在: {comfyui_output.exists()}")
 
-        if not comfyui_output.exists():
-            print(f"   ❌ ComfyUI 输出目录不存在！")
-            print(f"   请检查 comfyui_output_dir 参数是否正确")
-            return
+        # 方式 1: 尝试文件系统复制
+        if comfyui_output.exists():
+            print(f"   ✅ 使用文件系统复制方式")
+            self._copy_videos_from_filesystem(prompt_ids, comfyui_output)
+        else:
+            # 方式 2: 通过 API 下载
+            print(f"   ⚠️  ComfyUI 输出目录不可访问，尝试通过 API 下载")
+            print(f"   💡 这通常发生在 ComfyUI 部署在远程服务器时")
+            self._download_videos_via_api(prompt_ids)
 
+    def _copy_videos_from_filesystem(self, prompt_ids, comfyui_output):
+        """通过文件系统复制视频"""
         # 列出 ComfyUI 输出目录中的所有视频
         all_videos = list(comfyui_output.rglob("*.mp4"))
         print(f"   找到 {len(all_videos)} 个视频文件")
@@ -453,6 +461,73 @@ class VideoStoryGenerator:
                     print(f"   💡 可能的视频文件:")
                     for v in all_scene_videos[:3]:
                         print(f"      - {v.name}")
+
+        print()
+
+    def _download_videos_via_api(self, prompt_ids):
+        """通过 ComfyUI API 下载视频"""
+        print(f"   正在从 {self.comfyui_url} 下载视频...")
+
+        for item in prompt_ids:
+            scene_id = item['scene_id']
+            prompt_id = item['prompt_id']
+
+            print(f"   处理场景 {scene_id:02d} (任务ID: {prompt_id})...")
+
+            try:
+                # 获取任务历史记录
+                response = requests.get(f"{self.comfyui_url}/history/{prompt_id}", timeout=10)
+                if response.status_code != 200:
+                    print(f"      ❌ 无法获取任务历史: HTTP {response.status_code}")
+                    continue
+
+                history = response.json()
+                if prompt_id not in history:
+                    print(f"      ❌ 任务历史中未找到此任务")
+                    continue
+
+                # 从历史记录中获取输出文件
+                outputs = history[prompt_id].get('outputs', {})
+
+                for node_id, output in outputs.items():
+                    videos = output.get('videos', [])
+                    for video_info in videos:
+                        filename = video_info.get('filename')
+                        subfolder = video_info.get('subfolder', '')
+                        video_type = video_info.get('type', 'output')
+
+                        if filename and filename.endswith('.mp4'):
+                            # 构建下载 URL
+                            params = {
+                                'filename': filename,
+                                'type': video_type,
+                                'subfolder': subfolder
+                            }
+
+                            # 下载视频
+                            try:
+                                download_response = requests.get(
+                                    f"{self.comfyui_url}/view",
+                                    params=params,
+                                    timeout=60,
+                                    stream=True
+                                )
+
+                                if download_response.status_code == 200:
+                                    # 保存视频
+                                    dest_file = self.video_dir / filename
+                                    with open(dest_file, 'wb') as f:
+                                        for chunk in download_response.iter_content(chunk_size=8192):
+                                            f.write(chunk)
+
+                                    print(f"      ✅ 已下载: {filename} ({dest_file.stat().st_size / 1024 / 1024:.2f} MB)")
+                                else:
+                                    print(f"      ❌ 下载失败: HTTP {download_response.status_code}")
+                            except Exception as e:
+                                print(f"      ❌ 下载失败: {e}")
+
+            except Exception as e:
+                print(f"      ❌ 处理失败: {e}")
 
         print()
 
