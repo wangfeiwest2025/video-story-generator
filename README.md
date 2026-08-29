@@ -1,3 +1,25 @@
+---
+# 详细文档见 https://modelscope.cn/docs/创空间卡片
+domain:
+- cv
+- multi-modal
+tags:
+- video-generation
+- ai-agent
+- comfyui
+- streamlit
+datasets:
+  evaluation:
+  test:
+  train:
+models:
+## 启动文件(若SDK为Gradio/Streamlit，默认为app.py, 若为Static HTML, 默认为index.html)
+deployspec:
+  entry_file: web/app.py
+  sdk: streamlit
+license: Apache License 2.0
+---
+
 # 🎬 AI短视频自动化制作技能
 
 快速生成专业级AI短视频，从脚本到成片全自动化。
@@ -191,3 +213,13 @@ MIT License
 ---
 
 **🎬 让AI为您讲述故事！**
+
+---
+
+## 📦 Clone with HTTP
+
+```bash
+git clone https://www.modelscope.cn/studios/wangbaozhen/video-story-generator.git
+```
+
+> 本项目同时托管于 GitHub: https://github.com/wangfeiwest2025/video-story-generator
