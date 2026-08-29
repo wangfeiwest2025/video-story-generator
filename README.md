@@ -15,7 +15,7 @@ datasets:
 models:
 ## 启动文件(若SDK为Gradio/Streamlit，默认为app.py, 若为Static HTML, 默认为index.html)
 deployspec:
-  entry_file: web/app.py
+  entry_file: app.py
   sdk: streamlit
 license: Apache License 2.0
 ---
