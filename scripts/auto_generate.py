@@ -409,6 +409,14 @@ class VideoStoryGenerator:
 
     def retrieve_videos_from_comfyui(self, prompt_ids):
         """从 ComfyUI 获取视频文件（支持文件系统复制和 API 下载）"""
+
+        # 检查是否配置了输出目录
+        if not self.comfyui_output_dir:
+            print(f"   ℹ️  ComfyUI 输出目录未配置")
+            print(f"   💡 将通过 API 下载视频")
+            self._download_videos_via_api(prompt_ids)
+            return
+
         comfyui_output = Path(self.comfyui_output_dir)
 
         print(f"   ComfyUI 输出目录: {comfyui_output}")
